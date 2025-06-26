@@ -133,10 +133,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.create-tag.outputs.tag || github.event.release.tag_name }}
-          release_name: Release ${{ needs.create-tag.outputs.tag || github.event.release.tag_name }}
+          tag_name: ${{ github.event.release.tag_name }}
+          release_name: Release ${{ github.event.release.tag_name }}
           body: |
-            Release ${{ needs.create-tag.outputs.tag || github.event.release.tag_name }}
+            Release ${{ github.event.release.tag_name }}
             
             ## Binaries
             This release includes binaries for the following platforms:

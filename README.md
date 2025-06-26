@@ -61,7 +61,7 @@ docker-compose up -d
 
 ```bash
 # Download client
-wget https://github.com/friddle/gotty-piko/releases/latest/download/gottyp-linux-amd64
+wget https://github.com/friddle/gotty-piko/releases/v1.0.0/download/gottyp-linux-amd64
 chmod +x ./gottyp-linux-amd64
 
 ./gottyp --name=local --remote=192.168.1.100:8088
@@ -71,7 +71,7 @@ chmod +x ./gottyp-linux-amd64
 
 ```bash
 # Download client
-curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/latest/download/gottyp-darwin-amd64
+curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/v1.0.0/download/gottyp-darwin-amd64
 chmod +x ./gottyp
 
 ./gottyp --name=local --remote=192.168.1.100:8088
