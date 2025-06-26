@@ -79,20 +79,13 @@ chmod +x ./gottyp
 
 ## Access Methods
 
-### Local Mode
-After starting the client, access the local terminal via:
-```
-http://localhost:8080
-```
-
-### Remote Mode
 After starting the client, access the corresponding terminal via:
 ```
-http://remote-server-ip:port/client-name
+http://host-server-ip:port/client-name
 ```
 
 Example:
-- Remote server: `192.168.1.100:8088`
+- Server listening address: `192.168.1.100:8088` (server IP and NGINX)
 - Client name: `local`
 - Access URL: `http://192.168.1.100:8088/local`
 
@@ -104,19 +97,7 @@ Example:
 |-----------|-------------|---------|----------|
 | `--name` | piko client identifier name | - | ✅ |
 | `--remote` | Remote piko server address (format: host:port) | - | ✅ |
-| `--server-port` | piko server port | 8022 | ❌ |
 | `--terminal` | Specify terminal type to use (zsh, bash, sh, powershell, etc.) | Auto-select | ❌ |
-
-### Environment Variables Support
-
-The client also supports configuration through environment variables:
-
-| Environment Variable | Corresponding Parameter | Description |
-|---------------------|------------------------|-------------|
-| `NAME` | `--name` | piko client identifier name |
-| `REMOTE` | `--remote` | Remote piko server address |
-| `SERVER_PORT` | `--server-port` | piko server port |
-| `TERMINAL` | `--terminal` | Specify terminal type |
 
 ### Server Environment Variables
 

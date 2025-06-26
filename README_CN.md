@@ -93,19 +93,8 @@ http://主机服务器IP:端口(服务端监听的地址和监听端口)/客户�
 |------|------|--------|------|
 | `--name` | piko 客户端标识名称 | - | ✅ |
 | `--remote` | 远程 piko 服务器地址 (格式: host:port) | - | ✅ |
-| `--server-port` | piko 服务器端口 | 8022 | ❌ |
 | `--terminal` | 指定要使用的终端类型 (zsh, bash, sh, powershell 等) | 自动选择 | ❌ |
 
-### 环境变量支持
-
-客户端也支持通过环境变量配置：
-
-| 环境变量 | 对应参数 | 说明 |
-|----------|----------|------|
-| `NAME` | `--name` | piko 客户端标识名称 |
-| `REMOTE` | `--remote` | 远程 piko 服务器地址 |
-| `SERVER_PORT` | `--server-port` | piko 服务器端口 |
-| `TERMINAL` | `--terminal` | 指定终端类型 |
 
 ### 服务端环境变量
 
