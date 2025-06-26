@@ -6,6 +6,7 @@ RUN apk add --no-cache curl bash
 
 ENV PIKO_UPSTREAM_PORT=8022
 ENV LISTEN_PORT=8080
+ENV PIKO_TOKEN=""
 # 从piko镜像复制二进制文件
 COPY --from=ghcr.linkos.org/andydunstall/piko:latest /bin/piko /usr/local/bin/piko
 

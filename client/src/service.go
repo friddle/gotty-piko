@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -17,18 +18,22 @@ import (
 	"github.com/oklog/run"
 	"github.com/sorenisanerd/gotty/backend/localcommand"
 	"github.com/sorenisanerd/gotty/server"
-	"go.uber.org/zap"
 )
 
 // ServiceManager 服务管理器
 type ServiceManager struct {
 	config *Config
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 // NewServiceManager 创建新的服务管理器
 func NewServiceManager(config *Config) *ServiceManager {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &ServiceManager{
 		config: config,
+		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 
@@ -73,7 +78,6 @@ func (sm *ServiceManager) startServices() error {
 	})
 	// 信号处理
 	go func() {
-		ctx, cancel := context.WithCancel(context.Background())
 		g.Add(func() error {
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
@@ -81,25 +85,24 @@ func (sm *ServiceManager) startServices() error {
 			case sig := <-c:
 				fmt.Printf("\n🛑 收到停止信号 %v，正在关闭服务...\n", sig)
 				return nil
-			case <-ctx.Done():
-				return ctx.Err()
+			case <-sm.ctx.Done():
+				return sm.ctx.Err()
 			}
 		}, func(error) {
-			cancel()
+			sm.cancel()
 		})
 	}()
 
 	// 24小时超时
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 24*time.Hour)
 		g.Add(func() error {
-			<-ctx.Done()
-			if ctx.Err() == context.DeadlineExceeded {
+			<-sm.ctx.Done()
+			if sm.ctx.Err() == context.DeadlineExceeded {
 				fmt.Printf("\n⏰ 服务运行时间达到24小时，正在停止...\n")
 			}
-			return ctx.Err()
+			return sm.ctx.Err()
 		}, func(error) {
-			cancel()
+			sm.cancel()
 		})
 	}()
 
@@ -121,16 +124,15 @@ func (sm *ServiceManager) Stop() {
 
 // startGotty 启动 gotty
 func (sm *ServiceManager) startGotty() error {
-	// 设置 GOTTY_INDEX 环境变量为 name
-	os.Setenv("GOTTY_INDEX", sm.config.Name)
 	// 创建 gotty 服务器选项
 	fmt.Print("启动gotty中....")
 	options := &server.Options{
 		Address:     "127.0.0.1",
 		Port:        fmt.Sprintf("%d", sm.config.GottyPort),
-		Path:        "/",
+		Path:        "/" + sm.config.Name,
 		PermitWrite: true,
 		TitleFormat: "{{ .command }}@{{ .hostname }}",
+		WSOrigin:    ".*", // 允许所有来源的 WebSocket 连接
 	}
 
 	// 创建本地命令工厂
@@ -157,9 +159,15 @@ func (sm *ServiceManager) startGotty() error {
 func (sm *ServiceManager) startPiko() error {
 	// 创建 piko 配置
 	fmt.Printf("启动piko中\n")
+	remote := sm.config.Remote
+	if strings.HasPrefix(remote, "http") {
+		remote = sm.config.Remote
+	} else {
+		remote = fmt.Sprintf("http://%s", sm.config.Remote)
+	}
 	conf := &config.Config{
 		Connect: config.ConnectConfig{
-			URL:     fmt.Sprintf("http://%s", sm.config.Remote),
+			URL:     remote,
 			Timeout: 30 * time.Second,
 		},
 		Listeners: []config.ListenerConfig{
@@ -173,14 +181,14 @@ func (sm *ServiceManager) startPiko() error {
 			},
 		},
 		Log: log.Config{
-			Level:      "info",
+			Level:      "debug",
 			Subsystems: []string{},
 		},
 		GracePeriod: 30 * time.Second,
 	}
 
 	// 创建日志记录器
-	logger, err := log.NewLogger("info", []string{})
+	logger, err := log.NewLogger("debug", []string{})
 	if err != nil {
 		return fmt.Errorf("创建日志记录器失败: %v", err)
 	}
@@ -199,33 +207,33 @@ func (sm *ServiceManager) startPiko() error {
 	// 创建上游客户端
 	upstream := &client.Upstream{
 		URL:       connectURL,
-		Token:     conf.Connect.Token,
 		TLSConfig: nil, // 不使用 TLS
 		Logger:    logger.WithSubsystem("client"),
 	}
 
 	// 为每个监听器创建连接
 	for _, listenerConfig := range conf.Listeners {
-		connectCtx, connectCancel := context.WithTimeout(
-			context.Background(),
-			conf.Connect.Timeout,
-		)
-		defer connectCancel()
+		fmt.Printf("正在连接到端点: %s\n", listenerConfig.EndpointID)
 
-		ln, err := upstream.Listen(connectCtx, listenerConfig.EndpointID)
+		ln, err := upstream.Listen(sm.ctx, listenerConfig.EndpointID)
 		if err != nil {
 			return fmt.Errorf("监听端点失败 %s: %v", listenerConfig.EndpointID, err)
 		}
-		defer ln.Close()
-		server := reverseproxy.NewServer(listenerConfig, nil, logger)
-		// 启动 HTTP 代理服务器
+
+		fmt.Printf("成功连接到端点: %s\n", listenerConfig.EndpointID)
+
+		// 创建 HTTP 代理服务器，传入正确的配置而不是 nil
+		metrics := reverseproxy.NewMetrics("proxy")
+		server := reverseproxy.NewServer(listenerConfig, metrics, logger)
+		if server == nil {
+			return fmt.Errorf("创建 HTTP 代理服务器失败")
+		}
+		// 启动代理服务器
 		go func() {
 			if err := server.Serve(ln); err != nil {
-				logger.Error("HTTP 代理服务器错误", zap.Error(err))
+				fmt.Printf("代理服务器运行错误: %v\n", err)
 			}
-			fmt.Printf("启动piko成功:%s", conf.Connect.URL)
 		}()
-		select {}
 	}
 	return nil
 }

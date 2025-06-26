@@ -29,7 +29,7 @@ func MakeMainCmd() *cobra.Command {
 		Use:   "gottyp",
 		Short: "gotty-piko 客户端 - 基于终端的远程协助工具",
 		Long: `gotty-piko 是一个基于终端的高效远程协助工具，集成了 gotty 和 piko 服务。
-专为复杂网络环境下的远程协助而设计，避免传统 Windows 远程桌面对高带宽的依赖。
+专为复杂网络环境下的远程协助而设计，避免传统远程桌面对高带宽的依赖。
 
 使用示例:
   gottyp --name=my-server --remote=192.168.1.100:8088  # 连接到远程 piko 服务器

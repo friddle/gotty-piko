@@ -12,14 +12,16 @@ sed -i "s/{{LISTEN_PORT}}/$LISTEN_PORT/g" /etc/nginx/conf.d/piko.conf
 
 # 启动piko server
 echo "启动piko server..."
-piko server --upstream.bind-addr ":$PIKO_UPSTREAM_PORT" --proxy.bind-addr ":8023" &
+if [ -z "$PIKO_TOKEN" ]; then   
+    piko server --upstream.bind-addr ":$PIKO_UPSTREAM_PORT" --proxy.bind-addr ":8023" &
+else
+    piko server --upstream.bind-addr ":$PIKO_UPSTREAM_PORT" --proxy.bind-addr ":8023" --token $PIKO_TOKEN &
+fi
 
 # 等待piko启动
 sleep 2
 
 # 启动nginx
 echo "启动nginx..."
-nginx -g "daemon off;" &
+nginx -g "daemon off;"
 
-# 等待所有后台进程
-wait
