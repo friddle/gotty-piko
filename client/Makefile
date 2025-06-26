@@ -59,14 +59,6 @@ build-linux:
 	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-linux-arm64 ./main.go
 	@echo "Linux 版本构建完成"
 
-.PHONY: build-windows
-build-windows:
-	@echo "构建 Windows 版本..."
-	@mkdir -p ${DIST_DIR}
-	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-windows-amd64.exe ./main.go
-	GOOS=windows GOARCH=arm64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-windows-arm64.exe ./main.go
-	@echo "Windows 版本构建完成"
-
 .PHONY: build-darwin
 build-darwin:
 	@echo "构建 macOS 版本..."
@@ -116,7 +108,6 @@ help:
 	@echo "  build        - 构建当前平台版本"
 	@echo "  build-all    - 构建所有平台版本"
 	@echo "  build-linux  - 构建 Linux 版本"
-	@echo "  build-windows- 构建 Windows 版本"
 	@echo "  build-darwin - 构建 macOS 版本"
 	@echo "  deps         - 下载依赖"
 	@echo "  clean        - 清理构建文件"
