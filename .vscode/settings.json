@@ -1,9 +1,0 @@
-{
-    "go.alternateTools": {
-        "go": "/home/friddle/sdk/go1.23.2/bin/go"
-    },
-    "go.goroot": "/home/friddle/sdk/go1.23.2",
-    "go.gopath": "/home/friddle/sdk/gopath",
-    "go.goproxy": "https://goproxy.cn",
-    "go.goprivate": "git.laiye.com"
-}

@@ -1,4 +1,4 @@
 ./client/dist
 ./server/dist
-.vscodeo
+.vscode
 ./dist
