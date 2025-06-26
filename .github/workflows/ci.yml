@@ -32,10 +32,7 @@ jobs:
   client:
     name: Client Build & Test
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' || 
-      github.event_name == 'release' || 
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_client == 'true')
+    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.run_client == 'true')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,10 +59,7 @@ jobs:
   server:
     name: Server Build & Test
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' || 
-      github.event_name == 'release' || 
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_server == 'true')
+    if: | (github.event_name == 'workflow_dispatch' && github.event.inputs.run_server == 'true')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
