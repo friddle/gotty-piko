@@ -48,40 +48,6 @@ clean:
 	@docker rmi ${IMAGE_NAME}:${DOCKER_TAG} 2>/dev/null || true
 	@echo "清理完成"
 
-# 清理所有相关镜像
-.PHONY: clean-all
-clean-all:
-	@echo "清理所有相关Docker镜像..."
-	@docker images | grep ${IMAGE_NAME} | awk '{print $$3}' | xargs -r docker rmi -f
-	@echo "清理完成"
-
-# 显示镜像信息
-.PHONY: info
-info:
-	@echo "镜像信息:"
-	@docker images | grep ${IMAGE_NAME} || echo "未找到相关镜像"
-
-# 进入容器
-.PHONY: shell
-shell:
-	@echo "进入容器shell..."
-	@docker exec -it ${IMAGE_NAME}-test /bin/sh
-
-# 构建开发版本
-.PHONY: build-dev
-build-dev:
-	@echo "构建开发版本..."
-	docker build -t ${IMAGE_NAME}:dev ${BUILD_DIR}
-	@echo "开发版本构建完成: ${IMAGE_NAME}:dev"
-
-# 构建生产版本
-.PHONY: build-prod
-build-prod:
-	@echo "构建生产版本..."
-	docker build -t ${IMAGE_NAME}:${VERSION} ${BUILD_DIR}
-	docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
-	@echo "生产版本构建完成: ${IMAGE_NAME}:${VERSION}"
-
 # 帮助
 .PHONY: help
 help:

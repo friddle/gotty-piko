@@ -1,4 +1,5 @@
 # Makefile for gotty-piko-client
+SHELL=/bin/bash
 # 支持多平台编译
 
 # 变量定义
@@ -20,8 +21,8 @@ LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X 
 DIST_DIR=dist
 BUILD_DIR=dist
 
-# 支持的平台
-PLATFORMS=linux/amd64 linux/arm64 windows/amd64 windows/arm64 darwin/amd64 darwin/arm64
+# 支持的平台ndow
+PLATFORMS=linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 
 # 默认目标
 .PHONY: all
@@ -37,7 +38,7 @@ build:
 
 # 构建所有平台
 .PHONY: build-all
-build-all: clean
+build-all: 
 	@echo "构建所有平台的 ${BINARY_NAME}..."
 	@mkdir -p ${DIST_DIR}
 	@for platform in ${PLATFORMS}; do \
@@ -59,6 +60,7 @@ build-linux:
 	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-linux-arm64 ./main.go
 	@echo "Linux 版本构建完成"
 
+
 .PHONY: build-darwin
 build-darwin:
 	@echo "构建 macOS 版本..."
@@ -66,40 +68,6 @@ build-darwin:
 	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-darwin-amd64 ./main.go
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-darwin-arm64 ./main.go
 	@echo "macOS 版本构建完成"
-
-# 依赖管理
-.PHONY: deps
-deps:
-	@echo "下载依赖..."
-	${GO} mod download
-	${GO} mod tidy
-
-# 清理
-.PHONY: clean
-clean:
-	@echo "清理构建文件..."
-	@rm -rf ${BUILD_DIR} ${DIST_DIR}
-	@echo "清理完成"
-
-# 安装
-.PHONY: install
-install: build
-	@echo "安装 ${BINARY_NAME}..."
-	@cp ${BUILD_DIR}/${BINARY_NAME} /usr/local/bin/
-	@echo "安装完成"
-
-# 卸载
-.PHONY: uninstall
-uninstall:
-	@echo "卸载 ${BINARY_NAME}..."
-	@rm -f /usr/local/bin/${BINARY_NAME}
-	@echo "卸载完成"
-
-# 运行
-.PHONY: run
-run:
-	@echo "运行 ${BINARY_NAME}..."
-	${GO} run main.go
 
 # 帮助
 .PHONY: help
@@ -109,9 +77,4 @@ help:
 	@echo "  build-all    - 构建所有平台版本"
 	@echo "  build-linux  - 构建 Linux 版本"
 	@echo "  build-darwin - 构建 macOS 版本"
-	@echo "  deps         - 下载依赖"
-	@echo "  clean        - 清理构建文件"
-	@echo "  install      - 安装到系统"
-	@echo "  uninstall    - 从系统卸载"
-	@echo "  run          - 运行程序"
 	@echo "  help         - 显示此帮助信息" 
