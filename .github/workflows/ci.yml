@@ -85,11 +85,6 @@ jobs:
           cd server
           make build
 
-      - name: Build multi-platform server image
-        run: |
-          cd server
-          make build-multi
-
 
   # 发布
   release:
