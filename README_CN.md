@@ -16,7 +16,6 @@
 - 🔧 **简单部署**: Docker 一键部署，配置简单
 - 🔒 **安全可靠**: 基于 SSH 协议，支持用户认证
 - 📱 **跨平台**: 支持 Linux、macOS
-- 💻 **智能Shell**: 自动根据操作系统选择合适shell（Windows用PowerShell，Linux用Bash）
 
 ## 架构说明
 
