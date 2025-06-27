@@ -38,7 +38,7 @@ Browser terminal
 version: "3.8"
 services:
   piko:
-    image: docker.linkos.org/friddlecopper/piko-nginx:latest
+    image: ghcr.io/friddle/gotty-piko-server:latest
     container_name: gotty-piko-server
     environment:
       - PIKO_UPSTREAM_PORT=8022
@@ -48,6 +48,13 @@ services:
       - "8088:8088"
     restart: unless-stopped
 ```
+
+Or using Docker directly:
+
+```bash
+docker run -ti --network=host --rm --name=piko-server ghcr.io/friddle/gotty-piko-server
+```
+
 
 2. **Start the service**
 
@@ -61,21 +68,24 @@ docker-compose up -d
 
 ```bash
 # Download client
-wget https://github.com/friddle/gotty-piko/releases/v1.0.0/download/gottyp-linux-amd64
-chmod +x ./gottyp-linux-amd64
+wget https://github.com/friddle/gotty-piko/releases/download/v1.0.0/gottyp-linux-amd64 -O ./gottyp
+chmod +x ./gottyp
 
-./gottyp --name=local --remote=192.168.1.100:8088
+./gottyp --name=local --remote=192.168.1.100:8088(ServerIP:PORT)
 ```
 
 #### macOS Client
 
 ```bash
 # Download client
-curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/v1.0.0/download/gottyp-darwin-amd64
+curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/download/v1.0.0/gottyp-darwin-amd64
 chmod +x ./gottyp
 
-./gottyp --name=local --remote=192.168.1.100:8088
+./gottyp --name=local --remote=192.168.1.100:8088(ServerIP:PORT)
 ```
+
+![Client Start Screenshot](screenshot/start_cli.png)
+![Web UI Screenshot](screenshot/webui.png)
 
 ## Access Methods
 

@@ -181,14 +181,14 @@ func (sm *ServiceManager) startPiko() error {
 			},
 		},
 		Log: log.Config{
-			Level:      "debug",
+			Level:      "info",
 			Subsystems: []string{},
 		},
 		GracePeriod: 30 * time.Second,
 	}
 
 	// 创建日志记录器
-	logger, err := log.NewLogger("debug", []string{})
+	logger, err := log.NewLogger("info", []string{})
 	if err != nil {
 		return fmt.Errorf("创建日志记录器失败: %v", err)
 	}
