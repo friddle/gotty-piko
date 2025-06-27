@@ -2,8 +2,8 @@
 
 一个基于终端的高效远程协助工具，集成了 gotty 和 piko 服务。专为复杂网络环境下的远程协助而设计，避免传统远程桌面对高带宽的依赖，也无需复杂的网络配置和外网地址。
 
-[gotty](github.com/sorenisanerd/gotty)
-[piko](github.com/andydunstall/piko)
+[gotty](https://github.com/sorenisanerd/gotty)
+[piko](https://github.com/andydunstall/piko)
 
 **注意：**
 1. Windows方案还在研究。不能使用gotty
