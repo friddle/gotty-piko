@@ -14,6 +14,10 @@ GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
 CGO_ENABLED?=0
 
+# Android SDK 相关变量
+ANDROID_SDK?=$(HOME)/sdk/Android/Sdk
+ANDROID_NDK=$(ANDROID_SDK)/ndk/default
+
 # 编译参数
 LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT} -s -w"
 
@@ -21,7 +25,7 @@ LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X 
 DIST_DIR=dist
 BUILD_DIR=dist
 
-# 支持的平台ndow
+# 支持的平台
 PLATFORMS=linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 
 # 默认目标
@@ -60,7 +64,6 @@ build-linux:
 	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-linux-arm64 ./main.go
 	@echo "Linux 版本构建完成"
 
-
 .PHONY: build-darwin
 build-darwin:
 	@echo "构建 macOS 版本..."
@@ -68,6 +71,25 @@ build-darwin:
 	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-darwin-amd64 ./main.go
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 ${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-darwin-arm64 ./main.go
 	@echo "macOS 版本构建完成"
+
+# Android 编译目标
+.PHONY: build-android
+build-android:
+	@echo "构建所有 Android API 版本 (28-35)..."
+	@mkdir -p ${DIST_DIR}
+	@if [ ! -d "$(ANDROID_NDK)" ]; then \
+		echo "错误: Android NDK 未找到，请检查 ANDROID_SDK 环境变量"; \
+		echo "当前 ANDROID_SDK: $(ANDROID_SDK)"; \
+		exit 1; \
+	fi
+	@for api in 28 29 30 31 32 33 34 35; do \
+		echo "构建 Android API $$api 版本..."; \
+		GOOS=android GOARCH=arm64 CGO_ENABLED=1 \
+		CC=$(ANDROID_NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$$api-clang \
+		CXX=$(ANDROID_NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$$api-clang++ \
+		${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-android-arm64-api$$api ./main.go; \
+	done
+	@echo "所有 Android API 版本构建完成，输出目录: ${DIST_DIR}"
 
 # 帮助
 .PHONY: help
@@ -77,4 +99,10 @@ help:
 	@echo "  build-all    - 构建所有平台版本"
 	@echo "  build-linux  - 构建 Linux 版本"
 	@echo "  build-darwin - 构建 macOS 版本"
-	@echo "  help         - 显示此帮助信息" 
+	@echo "  build-android- 构建 Android API ${ANDROID_API} 版本"
+	@echo "  build-android-all - 构建所有 Android API 版本 (28-35)"
+	@echo "  help         - 显示此帮助信息"
+	@echo ""
+	@echo "环境变量:"
+	@echo "  ANDROID_SDK  - Android SDK 路径 (默认: ~/sdk/Android)"
+	@echo "  ANDROID_API  - Android API 版本 (默认: 23)" 
