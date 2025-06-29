@@ -30,7 +30,7 @@ PLATFORMS=linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 
 # 默认目标
 .PHONY: all
-all: clean build
+all: build
 
 # 构建当前平台
 .PHONY: build

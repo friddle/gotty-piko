@@ -56,12 +56,16 @@ func (sm *ServiceManager) Start() error {
 func (sm *ServiceManager) startServices() error {
 	var g run.Group
 
+	// 启动 piko 服务
 	g.Add(func() error {
 		err := sm.startPiko()
 		if err != nil {
-			fmt.Printf("启动gotty失败:%v", err)
+			fmt.Printf("启动piko失败:%v\n", err)
+			return err
 		}
-		return err
+		// 等待 context 取消
+		<-sm.ctx.Done()
+		return sm.ctx.Err()
 	}, func(error) {
 		// piko 服务会在 context 取消时自动停止
 	})
@@ -70,44 +74,62 @@ func (sm *ServiceManager) startServices() error {
 	g.Add(func() error {
 		err := sm.startGotty()
 		if err != nil {
-			fmt.Printf("启动gotty失败:%v", err)
+			fmt.Printf("启动gotty失败:%v\n", err)
+			return err
 		}
-		return err
+		// 等待 context 取消
+		<-sm.ctx.Done()
+		return sm.ctx.Err()
 	}, func(error) {
 		// gotty 服务会在 context 取消时自动停止
 	})
-	// 信号处理
-	go func() {
-		g.Add(func() error {
-			c := make(chan os.Signal, 1)
+
+	// 信号处理 - 移到主流程中
+	g.Add(func() error {
+		c := make(chan os.Signal, 1)
+
+		// 根据操作系统设置不同的信号
+		if runtime.GOOS == "windows" {
+			// Windows 支持 Ctrl+C (SIGINT) 和 Ctrl+Break
 			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-			select {
-			case sig := <-c:
-				fmt.Printf("\n🛑 收到停止信号 %v，正在关闭服务...\n", sig)
-				return nil
-			case <-sm.ctx.Done():
-				return sm.ctx.Err()
-			}
-		}, func(error) {
-			sm.cancel()
-		})
-	}()
+		} else {
+			// Unix-like 系统支持更多信号
+			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+		}
+
+		select {
+		case sig := <-c:
+			fmt.Printf("\n🛑 收到停止信号 %v，正在关闭服务...\n", sig)
+			sm.cancel() // 立即取消 context
+			return nil
+		case <-sm.ctx.Done():
+			return sm.ctx.Err()
+		}
+	}, func(error) {
+		sm.cancel()
+	})
 
 	// 24小时超时
-	go func() {
-		g.Add(func() error {
-			<-sm.ctx.Done()
-			if sm.ctx.Err() == context.DeadlineExceeded {
-				fmt.Printf("\n⏰ 服务运行时间达到24小时，正在停止...\n")
-			}
-			return sm.ctx.Err()
-		}, func(error) {
+	g.Add(func() error {
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), 24*time.Hour)
+		defer cancel()
+
+		select {
+		case <-timeoutCtx.Done():
+			fmt.Printf("\n⏰ 服务运行时间达到24小时，正在停止...\n")
 			sm.cancel()
-		})
-	}()
+			return nil
+		case <-sm.ctx.Done():
+			return sm.ctx.Err()
+		}
+	}, func(error) {
+		sm.cancel()
+	})
 
 	fmt.Printf("✅ 服务启动成功！\n")
 	fmt.Printf("🌐 访问地址: http://localhost:%d\n", sm.config.GottyPort)
+	fmt.Printf("按 Ctrl+C 停止服务\n")
+
 	// 运行所有服务
 	return g.Run()
 }
@@ -148,11 +170,16 @@ func (sm *ServiceManager) startGotty() error {
 		return fmt.Errorf("创建 gotty 服务器失败: %v", err)
 	}
 
-	// 启动 gotty 服务器
-	ctx := context.Background()
-	err = srv.Run(ctx)
-	fmt.Print("启动gotty结束")
-	return err
+	// 在独立的 goroutine 中启动 gotty 服务器
+	go func() {
+		err := srv.Run(sm.ctx)
+		if err != nil && err != context.Canceled {
+			fmt.Printf("gotty 服务器运行错误: %v\n", err)
+		}
+	}()
+
+	fmt.Print("启动gotty结束\n")
+	return nil
 }
 
 // startPiko 启动 piko 客户端
@@ -228,13 +255,16 @@ func (sm *ServiceManager) startPiko() error {
 		if server == nil {
 			return fmt.Errorf("创建 HTTP 代理服务器失败")
 		}
+
 		// 启动代理服务器
 		go func() {
-			if err := server.Serve(ln); err != nil {
+			if err := server.Serve(ln); err != nil && err != context.Canceled {
 				fmt.Printf("代理服务器运行错误: %v\n", err)
 			}
 		}()
 	}
+
+	fmt.Printf("启动piko结束\n")
 	return nil
 }
 
