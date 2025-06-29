@@ -4,9 +4,13 @@
 
 An efficient terminal-based remote assistance tool that integrates gotty and piko services. Designed for remote assistance in complex network environments, avoiding the high bandwidth dependency of traditional remote desktop solutions while eliminating the need for complex network configurations and public IP addresses.
 
+[gotty](https://github.com/sorenisanerd/gotty)
+[piko](https://github.com/andydunstall/piko)
+
 **Note:**
 1. Windows solution is still under research. Cannot use gotty
 2. Currently no security verification implemented. Token authorization will be implemented next
+3. Default 24-hour auto-exit program
 
 ## Features
 
@@ -71,6 +75,7 @@ wget https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-linux
 chmod +x ./gottyp
 
 ./gottyp --name=local --remote=192.168.1.100:8088(ServerIP:PORT)
+./gottyp --name=local --remote=192.168.1.100:8088 --pass=helloworld #http auth as name:pass --auto-exit=false(no auto exit)
 ```
 
 #### macOS Client
@@ -108,6 +113,7 @@ Example:
 | `--remote` | Remote piko server address (format: host:port) | - | ✅ |
 | `--terminal` | Specify terminal type to use (zsh, bash, sh, powershell, etc.) | Auto-select | ❌ |
 | `--pass` | http auth password | None mean not need auth,auth account is name | ❌ |
+| `--auto-exit` | Set auto exit | Default true, exit after 24 hours | ❌ |
 
 ### Server Environment Variables
 
@@ -119,6 +125,7 @@ Example:
 ### Shell Selection
 
 The client automatically selects the appropriate shell based on the operating system:
-- **Linux/macOS**: sh
+- **Linux**: sh
+- **macOS**: bash
 
 You can also manually specify the terminal type using the `--terminal` parameter or `TERMINAL` environment variable.
