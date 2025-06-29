@@ -66,7 +66,7 @@ docker-compose up -d
 
 ```bash
 # 下载客户端
-wget https://github.com/friddle/gotty-piko/releases/download/v1.0.0/gottyp-linux-amd64 -O ./gottyp
+wget https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-linux-amd64 -O ./gottyp
 chmod +x ./gottyp
 
 ./gottyp --name=local --remote=192.168.1.100:8088
@@ -77,7 +77,7 @@ chmod +x ./gottyp
 
 ```bash
 # 下载客户端
-curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/download/v1.0.0/gottyp-darwin-amd64
+curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-darwin-amd64
 chmod +x ./gottyp
 
 ./gottyp --name=local --remote=192.168.1.100:8088
