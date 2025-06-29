@@ -11,7 +11,6 @@ An efficient terminal-based remote assistance tool that integrates gotty and pik
 ## Features
 
 - 🚀 **Lightweight**: Terminal-based remote assistance with low resource usage
-- 🌐 **Network-friendly**: Supports intranet penetration, no public IP required
 - 🔧 **Easy Deployment**: One-click Docker deployment with simple configuration
 - 🔒 **Secure & Reliable**: Based on SSH protocol with user authentication support
 - 📱 **Cross-platform**: Supports Linux, macOS
@@ -108,6 +107,7 @@ Example:
 | `--name` | piko client identifier name | - | ✅ |
 | `--remote` | Remote piko server address (format: host:port) | - | ✅ |
 | `--terminal` | Specify terminal type to use (zsh, bash, sh, powershell, etc.) | Auto-select | ❌ |
+| `--pass` | http auth password | None mean not need auth,auth account is name | ❌ |
 
 ### Server Environment Variables
 
@@ -119,7 +119,6 @@ Example:
 ### Shell Selection
 
 The client automatically selects the appropriate shell based on the operating system:
-- **Linux/macOS**: Bash
-- **Others**: sh
+- **Linux/macOS**: sh
 
 You can also manually specify the terminal type using the `--terminal` parameter or `TERMINAL` environment variable.

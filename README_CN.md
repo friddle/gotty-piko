@@ -72,6 +72,7 @@ wget https://github.com/friddle/gotty-piko/releases/download/v1.0.0/gottyp-linux
 chmod +x ./gottyp
 
 ./gottyp --name=local --remote=192.168.1.100:8088
+./gottyp --name=local --remote=192.168.1.100:8088 --pass=helloworld #其中http授权为 name:pass
 ```
 
 #### macOS 客户端
@@ -108,6 +109,8 @@ http://主机服务器IP:端口/客户端名称
 | `--name` | piko 客户端标识名称 | - | ✅ |
 | `--remote` | 远程 piko 服务器地址 (格式: host:port) | - | ✅ |
 | `--terminal` | 指定要使用的终端类型 (zsh, bash, sh, powershell 等) | 自动选择 | ❌ |
+| `--pass` | 设置http的密码 | 默认为空 | ❌ |
+
 
 ### 服务端环境变量
 
@@ -119,8 +122,8 @@ http://主机服务器IP:端口/客户端名称
 ### Shell 选择
 
 客户端会根据操作系统自动选择合适的shell：
-- **Linux/macOS**: Bash
-- **其他**: sh
+- **Linux**: sh
+- **Mac**: bash
 
 也可以通过 `--terminal` 参数或 `TERMINAL` 环境变量手动指定终端类型。
 
