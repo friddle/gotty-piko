@@ -8,6 +8,7 @@
 **注意：**
 1. Windows方案还在研究。不能使用gotty
 2. 暂时没有任何安全验证。token授权会在接下来实现
+3. 默认24小时退出程序
 
 ## 项目特点
 
@@ -70,7 +71,8 @@ wget https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-linux
 chmod +x ./gottyp
 
 ./gottyp --name=local --remote=192.168.1.100:8088
-./gottyp --name=local --remote=192.168.1.100:8088 --pass=helloworld #其中http授权为 name:pass
+./gottyp --name=local --remote=192.168.1.100:8088 --pass=helloworld #其中http授权为 name:pass --auto-exit=false(不自動退出)
+
 ```
 
 #### macOS 客户端
@@ -107,7 +109,9 @@ http://主机服务器IP:端口/客户端名称
 | `--name` | piko 客户端标识名称 | - | ✅ |
 | `--remote` | 远程 piko 服务器地址 (格式: host:port) | - | ✅ |
 | `--terminal` | 指定要使用的终端类型 (zsh, bash, sh, powershell 等) | 自动选择 | ❌ |
-| `--pass` | 设置http的密码 | 默认为空 | ❌ |
+| `--pass` | 设置http auth的密码 | 默认为空 | ❌ |
+| `--auto-exit` | 设置为自动退出 | 默认为true.默认24小时后退出 | ❌ |
+
 
 
 ### 服务端环境变量
