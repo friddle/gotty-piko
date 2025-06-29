@@ -43,6 +43,7 @@ func (sm *ServiceManager) Start() error {
 	fmt.Printf("客户端名称: %s\n", sm.config.Name)
 	fmt.Printf("远程服务器: %s\n", sm.config.Remote)
 	fmt.Printf("使用终端: %s\n", sm.getShell())
+	fmt.Printf("自动退出: %t\n", sm.config.AutoExit)
 
 	// 自动分配可用端口
 	sm.config.GottyPort = sm.config.FindAvailablePort()
@@ -109,22 +110,24 @@ func (sm *ServiceManager) startServices() error {
 		sm.cancel()
 	})
 
-	// 24小时超时
-	g.Add(func() error {
-		timeoutCtx, cancel := context.WithTimeout(context.Background(), 24*time.Hour)
-		defer cancel()
+	// 24小时超时 - 只有当 AutoExit 为 true 时才启用
+	if sm.config.AutoExit {
+		g.Add(func() error {
+			timeoutCtx, cancel := context.WithTimeout(context.Background(), 24*time.Hour)
+			defer cancel()
 
-		select {
-		case <-timeoutCtx.Done():
-			fmt.Printf("\n⏰ 服务运行时间达到24小时，正在停止...\n")
+			select {
+			case <-timeoutCtx.Done():
+				fmt.Printf("\n⏰ 服务运行时间达到24小时，正在停止...\n")
+				sm.cancel()
+				return nil
+			case <-sm.ctx.Done():
+				return sm.ctx.Err()
+			}
+		}, func(error) {
 			sm.cancel()
-			return nil
-		case <-sm.ctx.Done():
-			return sm.ctx.Err()
-		}
-	}, func(error) {
-		sm.cancel()
-	})
+		})
+	}
 
 	fmt.Printf("✅ 服务启动成功！\n")
 	fmt.Printf("🌐 访问地址: http://localhost:%d\n", sm.config.GottyPort)

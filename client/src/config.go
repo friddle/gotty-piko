@@ -15,6 +15,7 @@ type Config struct {
 	ServerPort int    // piko 服务器端口
 	GottyPort  int    // 本地 gotty 端口 (自动分配)
 	Terminal   string // 指定要使用的终端类型 (zsh, bash, sh, powershell 等)
+	AutoExit   bool   // 是否启用24小时自动退出 (默认: true)
 }
 
 // NewConfig 创建新的配置实例
@@ -23,8 +24,9 @@ func NewConfig() *Config {
 		Name:       getEnvOrDefault("NAME", ""),
 		Remote:     getEnvOrDefault("REMOTE", ""),
 		ServerPort: getEnvIntOrDefault("SERVER_PORT", 8022),
-		GottyPort:  0,                               // 将在启动时自动分配
-		Terminal:   getEnvOrDefault("TERMINAL", ""), // 从环境变量读取终端类型
+		GottyPort:  0,                                      // 将在启动时自动分配
+		Terminal:   getEnvOrDefault("TERMINAL", ""),        // 从环境变量读取终端类型
+		AutoExit:   getEnvBoolOrDefault("AUTO_EXIT", true), // 从环境变量读取自动退出设置，默认为 true
 	}
 }
 
@@ -95,6 +97,16 @@ func getEnvIntOrDefault(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
+		}
+	}
+	return defaultValue
+}
+
+// getEnvBoolOrDefault 获取布尔环境变量或默认值
+func getEnvBoolOrDefault(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			return boolValue
 		}
 	}
 	return defaultValue

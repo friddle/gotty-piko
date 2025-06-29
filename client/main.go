@@ -23,6 +23,7 @@ func MakeMainCmd() *cobra.Command {
 		remote     string
 		serverPort int
 		terminal   string
+		autoExit   bool
 	)
 
 	cmd := &cobra.Command{
@@ -34,7 +35,8 @@ func MakeMainCmd() *cobra.Command {
 使用示例:
   gottyp --name=my-server --remote=192.168.1.100:8088  # 连接到远程 piko 服务器
   gottyp --name=client1 --remote=piko.example.com:8022 # 连接到远程 piko 服务器
-  gottyp --name=local --remote=192.168.1.100:8088 --terminal=zsh  # 指定使用 zsh`,
+  gottyp --name=local --remote=192.168.1.100:8088 --terminal=zsh  # 指定使用 zsh
+  gottyp --name=server --remote=192.168.1.100:8088 --auto-exit=false  # 禁用24小时自动退出`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// 创建配置
 			config := &src.Config{
@@ -42,6 +44,7 @@ func MakeMainCmd() *cobra.Command {
 				Remote:     remote,
 				ServerPort: serverPort,
 				Terminal:   terminal,
+				AutoExit:   autoExit,
 			}
 
 			// 验证配置
@@ -66,6 +69,7 @@ func MakeMainCmd() *cobra.Command {
 	cmd.Flags().StringVar(&remote, "remote", "", "远程 piko 服务器地址 (格式: host:port)")
 	cmd.Flags().IntVar(&serverPort, "server-port", 8022, "piko 服务器端口")
 	cmd.Flags().StringVar(&terminal, "terminal", "", "指定要使用的终端类型 (zsh, bash, sh, powershell 等)")
+	cmd.Flags().BoolVar(&autoExit, "auto-exit", true, "是否启用24小时自动退出 (默认: true)")
 
 	// 设置必需参数
 	cmd.MarkFlagRequired("name")
