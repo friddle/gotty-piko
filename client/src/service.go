@@ -131,6 +131,11 @@ func (sm *ServiceManager) startServices() error {
 
 	fmt.Printf("✅ 服务启动成功！\n")
 	fmt.Printf("🌐 访问地址: http://localhost:%d\n", sm.config.GottyPort)
+	if sm.config.Pass != "" {
+		fmt.Printf("🔐 HTTP认证: 用户名=%s, 密码=%s\n", sm.config.Name, sm.config.Pass)
+	} else {
+		fmt.Printf("⚠️  未启用HTTP认证\n")
+	}
 	fmt.Printf("按 Ctrl+C 停止服务\n")
 
 	// 运行所有服务
@@ -152,12 +157,17 @@ func (sm *ServiceManager) startGotty() error {
 	// 创建 gotty 服务器选项
 	fmt.Print("启动gotty中....")
 	options := &server.Options{
-		Address:     "127.0.0.1",
-		Port:        fmt.Sprintf("%d", sm.config.GottyPort),
-		Path:        "/" + sm.config.Name,
-		PermitWrite: true,
-		TitleFormat: "{{ .command }}@{{ .hostname }}",
-		WSOrigin:    ".*", // 允许所有来源的 WebSocket 连接
+		Address:         "127.0.0.1",
+		Port:            fmt.Sprintf("%d", sm.config.GottyPort),
+		Path:            "/" + sm.config.Name,
+		PermitWrite:     true,
+		TitleFormat:     "{{ .command }}@{{ .hostname }}",
+		WSOrigin:        ".*",                 // 允许所有来源的 WebSocket 连接
+		EnableBasicAuth: sm.config.Pass != "", // 只有当密码不为空时才启用HTTP基本认证
+	}
+
+	if sm.config.Pass != "" {
+		options.Credential = sm.config.Name + ":" + sm.config.Pass // 设置认证凭据：用户名:密码
 	}
 
 	// 创建本地命令工厂
