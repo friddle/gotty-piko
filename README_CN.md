@@ -6,9 +6,8 @@
 [piko](https://github.com/andydunstall/piko)
 
 **注意：**
-1. Windows方案还在研究。不能使用gotty
-2. 暂时没有任何安全验证。token授权会在接下来实现
-3. 默认24小时退出程序
+1. Windows可以使用 https://github.com/friddle/goxrdp-piko
+2. 默认24小时退出程序
 
 ## 项目特点
 
