@@ -8,9 +8,8 @@ An efficient terminal-based remote assistance tool that integrates gotty and pik
 [piko](https://github.com/andydunstall/piko)
 
 **Note:**
-1. Windows solution is still under research. Cannot use gotty
-2. Currently no security verification implemented. Token authorization will be implemented next
-3. Default 24-hour auto-exit program
+1. Windows solution use [goxrdp-piko](https://github.com/friddle/goxrdp-piko)
+2. Default 24-hour auto-exit program
 
 ## Features
 
