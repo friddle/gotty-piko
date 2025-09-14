@@ -1,0 +1,12 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+
+9. 不要做多文件为了备份。没有使用的文件请直接删除
+10. 不要做多方案！
+11. 代码放到相应的位置。不用到的代码请删掉
+12. gradlew/java 请使用sdkman的配置
+13. ANDROID_SDK_ROOT=/Users/friddle/Library/Android/sdk

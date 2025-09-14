@@ -1,0 +1,53 @@
+# 构建输出目录
+dist/
+binary/
+
+# Go 相关
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# 依赖
+vendor/
+
+# IDE 相关
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统相关
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Android 相关
+android/app/build/
+android/build/
+android/.gradle/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/app/libs/gottyp.aar
+android/app/libs/gottyp-sources.jar
+
+# 临时文件
+*.tmp
+*.temp
+*.log
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
