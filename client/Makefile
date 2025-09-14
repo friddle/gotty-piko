@@ -85,8 +85,8 @@ build-android:
 	@for api in 28 29 30 31 32 33 34 35; do \
 		echo "构建 Android API $$api 版本..."; \
 		GOOS=android GOARCH=arm64 CGO_ENABLED=1 \
-		CC=$(ANDROID_NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$$api-clang \
-		CXX=$(ANDROID_NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$$api-clang++ \
+		CC=$(ANDROID_NDK)/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android$$api-clang \
+		CXX=$(ANDROID_NDK)/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android$$api-clang++ \
 		${GO} build ${LDFLAGS} -o ${DIST_DIR}/${BINARY_NAME}-android-arm64-api$$api ./main.go; \
 	done
 	@echo "所有 Android API 版本构建完成，输出目录: ${DIST_DIR}"
