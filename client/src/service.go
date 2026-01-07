@@ -172,7 +172,21 @@ func (sm *ServiceManager) startGotty() error {
 
 	// 创建本地命令工厂
 	backendOptions := &localcommand.Options{}
-	factory, err := localcommand.NewFactory(sm.getShell(), []string{}, backendOptions)
+	var factory *localcommand.Factory
+	var err error
+
+	if sm.config.Tmux {
+		// 使用 tmux 保持会话
+		// new -A -s <name> <shell>
+		// -A: 如果会话存在则附加，否则创建
+		// -s: 会话名称
+		cmd := "tmux"
+		args := []string{"new", "-A", "-s", "gotty-" + sm.config.Name, sm.getShell()}
+		factory, err = localcommand.NewFactory(cmd, args, backendOptions)
+	} else {
+		factory, err = localcommand.NewFactory(sm.getShell(), []string{}, backendOptions)
+	}
+
 	if err != nil {
 		return fmt.Errorf("创建 gotty 工厂失败: %v", err)
 	}

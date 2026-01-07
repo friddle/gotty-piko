@@ -17,6 +17,7 @@ type Config struct {
 	Terminal   string // 指定要使用的终端类型 (zsh, bash, sh, powershell 等)
 	Pass       string // 远程 piko 服务器密码
 	AutoExit   bool   // 是否启用24小时自动退出 (默认: true)
+	Tmux       bool   // 是否使用 tmux 保持会话
 }
 
 // NewConfig 创建新的配置实例
@@ -28,6 +29,7 @@ func NewConfig() *Config {
 		GottyPort:  0,                                      // 将在启动时自动分配
 		Terminal:   getEnvOrDefault("TERMINAL", ""),        // 从环境变量读取终端类型
 		AutoExit:   getEnvBoolOrDefault("AUTO_EXIT", true), // 从环境变量读取自动退出设置，默认为 true
+		Tmux:       getEnvBoolOrDefault("TMUX", false),     // 从环境变量读取 tmux 设置，默认为 false
 		Pass:       getEnvOrDefault("PASS", ""),
 	}
 }
