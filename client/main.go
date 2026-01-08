@@ -74,7 +74,7 @@ func MakeMainCmd() *cobra.Command {
 	cmd.Flags().IntVar(&serverPort, "server-port", 8022, "piko 服务器端口")
 	cmd.Flags().StringVar(&terminal, "terminal", "", "指定要使用的终端类型 (zsh, bash, sh, powershell 等)")
 	cmd.Flags().BoolVar(&autoExit, "auto-exit", true, "是否启用24小时自动退出 (默认: true)")
-	cmd.Flags().BoolVar(&tmux, "tmux", false, "是否使用 tmux 保持会话 (默认: false)")
+	cmd.Flags().BoolVar(&tmux, "tmux", true, "是否使用 tmux 保持会话 (默认: true, 找不到时降级到bash)")
 	cmd.Flags().StringVar(&pass, "pass", "", "HTTP认证密码")
 
 	// 设置必需参数

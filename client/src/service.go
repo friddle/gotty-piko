@@ -176,13 +176,21 @@ func (sm *ServiceManager) startGotty() error {
 	var err error
 
 	if sm.config.Tmux {
-		// 使用 tmux 保持会话
-		// new -A -s <name> <shell>
-		// -A: 如果会话存在则附加，否则创建
-		// -s: 会话名称
-		cmd := "tmux"
-		args := []string{"new", "-A", "-s", "gotty-" + sm.config.Name, sm.getShell()}
-		factory, err = localcommand.NewFactory(cmd, args, backendOptions)
+		// 检查 tmux 是否可用
+		if sm.isTmuxAvailable() {
+			// 使用 tmux 保持会话
+			// new -A -s <name> <shell>
+			// -A: 如果会话存在则附加，否则创建
+			// -s: 会话名称
+			cmd := "tmux"
+			args := []string{"new", "-A", "-s", "gotty-" + sm.config.Name, sm.getShell()}
+			factory, err = localcommand.NewFactory(cmd, args, backendOptions)
+			fmt.Printf("✅ 使用 tmux 保持会话\n")
+		} else {
+			// tmux 不可用，降级到普通 shell
+			fmt.Printf("⚠️  tmux 未找到，降级使用普通 shell\n")
+			factory, err = localcommand.NewFactory(sm.getShell(), []string{}, backendOptions)
+		}
 	} else {
 		factory, err = localcommand.NewFactory(sm.getShell(), []string{}, backendOptions)
 	}
@@ -336,5 +344,22 @@ func (sm *ServiceManager) isShellAvailable(shell string) bool {
 
 	// 也检查 /usr/bin 目录
 	_, err = os.Stat(fmt.Sprintf("/usr/bin/%s", shell))
+	return err == nil
+}
+
+// isTmuxAvailable 检查 tmux 是否可用
+func (sm *ServiceManager) isTmuxAvailable() bool {
+	// 首先尝试使用 exec.LookPath 来检查命令是否在 PATH 中
+	_, err := os.Stat("/usr/bin/tmux")
+	if err == nil {
+		return true
+	}
+
+	_, err = os.Stat("/bin/tmux")
+	if err == nil {
+		return true
+	}
+
+	_, err = os.Stat("/usr/local/bin/tmux")
 	return err == nil
 }
