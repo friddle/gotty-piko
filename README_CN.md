@@ -1,44 +1,50 @@
 # gotty-piko
 
+English | [中文文档](README_CN.md)
+
 一个基于终端的高效远程协助工具，集成了 gotty 和 piko 服务。专为复杂网络环境下的远程协助而设计，避免传统远程桌面对高带宽的依赖，也无需复杂的网络配置和外网地址。
 
-[gotty](https://github.com/sorenisanerd/gotty)
+[gotty](https://github.com/friddle/gotty) (fork 定制版)
 [piko](https://github.com/andydunstall/piko)
 
 **注意：**
-1. Windows可以使用 https://github.com/friddle/goxrdp-piko
-2. 默认24小时退出程序
+1. Windows 方案使用 [goxrdp-piko](https://github.com/friddle/goxrdp-piko)
 
 ## 项目特点
 
-- 🚀 **轻量级**: 基于终端的远程协助，资源占用低
-- 🔧 **简单部署**: Docker 一键部署，配置简单
-- 🔒 **安全可靠**: 基于 SSH 协议，支持用户认证
-- 📱 **跨平台**: 支持 Linux、macOS
+- 一体化二进制：gotty + piko 一条命令启动
+- 守护进程模式（默认开启）：后台运行
+- 自动生成会话ID：`{用户}_{目录}_{随机数}`
+- 默认开启 Basic Auth，自动生成账号密码
+- notify-send 拦截：桌面通知推送到浏览器右下角
+- Webhook 转发：支持飞书兼容的通知推送
+- 静态文件浏览：通过 `/files/` 路径访问
+- 端口代理：通过 `/port/{port}` 路径转发
+- tmux 集成：持久化会话
+- 跨平台：Linux、macOS、Android
 
 ## 架构说明
 
 ```
-客户端 (gotty-piko client) 
-    ↓ 本地Shell
-gotty服务
-    ↓ HTTP访问
-浏览器终端
+gottyp (客户端)
+  ├── gotty (本地 Web 终端)
+  │     ├── /{session}/          → 终端 Web UI
+  │     ├── /{session}/files/    → 静态文件浏览器
+  │     └── /{session}/port/{p}  → 端口代理
+  └── piko client → piko server → 浏览器 (通过 CDN)
 ```
 
 ## 快速开始
 
 ### 服务端部署
 
-1. **使用 Docker Compose 部署**
-
 ```yaml
 # docker-compose.yaml
 version: "3.8"
 services:
-  piko:
-    image: ghcr.io/friddle/gotty-piko-server:latest
-    container_name: gotty-piko-server
+  clauded:
+    image: friddlecopper/clauded-port-forward:latest
+    container_name: clauded
     environment:
       - PIKO_UPSTREAM_PORT=8022
       - LISTEN_PORT=8088
@@ -48,83 +54,91 @@ services:
     restart: unless-stopped
 ```
 
-或直接使用 Docker：
-
-```bash
-docker run -ti --network=host --rm --name=piko-server ghcr.io/friddle/gotty-piko-server
-```
-
-2. **启动服务**
-
 ```bash
 docker-compose up -d
 ```
 
 ### 客户端使用
 
-#### Linux 客户端
-
 ```bash
-# 下载客户端
-wget https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-linux-amd64 -O ./gottyp
+# 下载
+wget https://github.com/friddle/gotty-piko/releases/latest/download/gottyp-linux-amd64 -O ./gottyp
 chmod +x ./gottyp
 
-./gottyp --name=local --remote=192.168.1.100:8088
-./gottyp --name=local --remote=192.168.1.100:8088 --pass=helloworld #其中http授权为 name:pass --auto-exit=false(不自動退出)
+# 启动（守护进程模式，默认远程: https://clauded.friddle.me）
+./gottyp
 
+# 指定会话名
+./gottyp --session myserver
+
+# 关闭认证
+./gottyp --auth=false
+
+# 启用静态文件浏览和端口代理
+./gottyp --static-index=/home/user --attach-port=3000
+
+# 前台模式
+./gottyp --daemon=false
 ```
 
-#### macOS 客户端
-
-```bash
-# 下载客户端
-curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-darwin-amd64
-chmod +x ./gottyp
-
-./gottyp --name=local --remote=192.168.1.100:8088
+输出示例：
 ```
-
-![客户端启动截图](screenshot/start_cli.png)
-![Web界面截图](screenshot/webui.png)
+========================================
+Remote URL: https://clauded.friddle.me/user_project_a1b2/
+Username:   x7kq3m
+Password:   p9w2nfc8h4
+Port Proxy: https://clauded.friddle.me/user_project_a1b2/port/3000
+Files:      https://clauded.friddle.me/user_project_a1b2/files/
+========================================
+```
 
 ## 访问方式
 
-当客户端启动后，通过以下地址访问对应的终端：
-```
-http://主机服务器IP:端口/客户端名称
-```
-
-例如：
-- 服务端监听的地址: `192.168.1.100:8088` (服务端IP和NGINX)
-- 客户端名称: `local`
-- 访问地址: `http://192.168.1.100:8088/local`
+| URL | 说明 |
+|-----|------|
+| `https://clauded.friddle.me/{session}/` | 终端 Web UI |
+| `https://clauded.friddle.me/{session}/files/` | 静态文件浏览器 |
+| `https://clauded.friddle.me/{session}/port/{port}` | 端口代理 |
 
 ## 配置说明
 
 ### 客户端参数
 
-| 参数 | 说明 | 默认值 | 必填 |
-|------|------|--------|------|
-| `--name` | piko 客户端标识名称 | - | ✅ |
-| `--remote` | 远程 piko 服务器地址 (格式: host:port) | - | ✅ |
-| `--terminal` | 指定要使用的终端类型 (zsh, bash, sh, powershell 等) | 自动选择 | ❌ |
-| `--pass` | 设置http auth的密码 | 默认为空 | ❌ |
-| `--auto-exit` | 设置为自动退出 | 默认为true.默认24小时后退出 | ❌ |
-
-
-
-### 服务端环境变量
-
-| 变量 | 说明 | 默认值 |
+| 参数 | 说明 | 默认值 |
 |------|------|--------|
-| `PIKO_UPSTREAM_PORT` | Piko 上游端口 | 8022 |
-| `LISTEN_PORT` | HTTP 监听端口 | 8088 |
+| `--session` | 会话ID（piko endpoint + gotty 路径） | `{用户}_{目录}_{随机数}` |
+| `--remote` | Piko 服务器 URL | `https://clauded.friddle.me` |
+| `--auth` | 启用 Basic Auth | `true` |
+| `--auth-name` | 认证用户名 | 自动生成 |
+| `--pass` | 认证密码 | 自动生成 |
+| `--terminal` | 终端类型 (zsh, bash, sh 等) | 自动选择 |
+| `--tmux` | 使用 tmux 保持会话 | `true` |
+| `--daemon` | 守护进程模式（后台运行） | `true` |
+| `--pid-file` | PID 文件路径 | `/tmp/gottyp.pid` |
+| `--enable-notify` | 拦截 notify-send | `true` |
+| `--notify-webhook` | Webhook URL（飞书兼容） | 禁用 |
+| `--static-index` | /files/ 对应的目录 | 当前目录 |
+| `--attach-port` | /port/ 代理的目标端口 | 禁用 |
+| `--auto-exit` | 24小时后自动退出 | `true` |
 
-### Shell 选择
+### 子命令
 
-客户端会根据操作系统自动选择合适的shell：
-- **Linux**: sh
-- **Mac**: bash
+```bash
+gottyp tmux list        # 列出 tmux 会话
+gottyp tmux kill-all    # 终止所有 tmux 会话和 gottyp 守护进程
+```
 
-也可以通过 `--terminal` 参数或 `TERMINAL` 环境变量手动指定终端类型。
+### 环境变量
 
+| 变量 | 说明 |
+|------|------|
+| `SESSION` | 会话ID |
+| `AUTH_NAME` | 认证用户名 |
+| `PASS` | 认证密码 |
+| `REMOTE` | Piko 服务器 URL |
+| `TERMINAL` | 终端类型 |
+| `DAEMON` | 守护进程模式 |
+| `ENABLE_NOTIFY` | 通知拦截 |
+| `NOTIFY_WEBHOOK` | Webhook URL |
+| `STATIC_INDEX` | 静态文件目录 |
+| `ATTACH_PORT` | 端口代理目标 |
