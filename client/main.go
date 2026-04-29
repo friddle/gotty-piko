@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"gotty-piko-client/src"
 
@@ -78,13 +79,15 @@ Examples:
 				if err := src.Daemonize(staticIndex, config.PidFile); err != nil {
 					return fmt.Errorf("failed to daemonize: %v", err)
 				}
+			} else {
+				manager.PrintInfo()
 			}
 
 			if src.IsDaemonized() {
 				f, err := os.OpenFile("/tmp/gottyp.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 				if err == nil {
-					syscall.Dup2(int(f.Fd()), int(os.Stdout.Fd()))
-					syscall.Dup2(int(f.Fd()), int(os.Stderr.Fd()))
+					unix.Dup2(int(f.Fd()), int(os.Stdout.Fd()))
+					unix.Dup2(int(f.Fd()), int(os.Stderr.Fd()))
 				}
 			}
 

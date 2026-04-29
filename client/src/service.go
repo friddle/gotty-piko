@@ -174,17 +174,22 @@ func (sm *ServiceManager) startGotty() error {
 		Path:          "/" + sm.config.Session,
 		SessionName:   sm.config.Session,
 		PermitWrite:   true,
-		TitleFormat:   "{{ .command }}@{{ .hostname }}",
+		TitleFormat:   "{{ .session_name }}",
 		WSOrigin:      ".*",
 		Auth:          sm.config.Auth,
 		EnableNotify:  sm.config.EnableNotify,
 		NotifyWebhook: sm.config.NotifyWebhook,
 		StaticIndex:   sm.config.StaticIndex,
 		AttachPort:    sm.config.AttachPort,
+		TitleVariables: map[string]interface{}{
+			"command":      sm.getShell(),
+			"session_name": sm.config.Session,
+		},
 	}
 
 	if sm.config.Auth {
-		options.Credential = sm.config.AuthName + ":" + sm.config.Pass
+		options.AuthName = sm.config.AuthName
+		options.Password = sm.config.Pass
 		options.EnableBasicAuth = true
 	}
 

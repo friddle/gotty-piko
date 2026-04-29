@@ -47,10 +47,8 @@ services:
     container_name: clauded
     environment:
       - PIKO_UPSTREAM_PORT=8022
-      - LISTEN_PORT=8088
     ports:
-      - "8022:8022"
-      - "8088:8088"
+      - "80:80"
     restart: unless-stopped
 ```
 
