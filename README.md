@@ -31,7 +31,7 @@ gottyp (client)
   │     ├── /{session}/          → terminal web UI
   │     ├── /{session}/files/    → static file browser
   │     └── /{session}/port/{p}  → port proxy
-  └── piko client → piko server → browser (via Cloudflare/CDN)
+  └── piko client → piko server → browser (via CDN)
 ```
 
 ## Quick Start
@@ -42,9 +42,9 @@ gottyp (client)
 # docker-compose.yaml
 version: "3.8"
 services:
-  piko:
-    image: ghcr.io/friddle/gotty-piko-server:latest
-    container_name: gotty-piko-server
+  clauded:
+    image: friddlecopper/clauded-port-forward:latest
+    container_name: clauded
     environment:
       - PIKO_UPSTREAM_PORT=8022
       - LISTEN_PORT=8088
@@ -54,7 +54,9 @@ services:
     restart: unless-stopped
 ```
 
-### Client Usage
+```bash
+docker-compose up -d
+```
 
 ```bash
 # Download
@@ -116,7 +118,6 @@ Files:      https://clauded.friddle.me/user_project_a1b2/files/
 | `--static-index` | Directory for /files/ | current directory |
 | `--attach-port` | Port for /port/ proxy | disabled |
 | `--auto-exit` | Auto exit after 24h | `true` |
-| `--server-port` | Piko server port | `8022` |
 
 ### Subcommands
 

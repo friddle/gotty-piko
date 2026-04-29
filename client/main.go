@@ -24,7 +24,6 @@ func MakeMainCmd() *cobra.Command {
 		session       string
 		authName      string
 		remote        string
-		serverPort    int
 		terminal      string
 		autoExit      bool
 		pass          string
@@ -55,7 +54,6 @@ Examples:
 				Session:       session,
 				AuthName:      authName,
 				Remote:        remote,
-				ServerPort:    serverPort,
 				Terminal:      terminal,
 				AutoExit:      autoExit,
 				Pass:          pass,
@@ -101,7 +99,6 @@ Examples:
 	cmd.Flags().StringVar(&session, "session", "", "Session ID for endpoint path (default: user_dir_random)")
 	cmd.Flags().StringVar(&authName, "auth-name", "", "Auth username for Basic Auth (auto-generated if not set)")
 	cmd.Flags().StringVar(&remote, "remote", "https://clauded.friddle.me", "Remote piko server address")
-	cmd.Flags().IntVar(&serverPort, "server-port", 8022, "Piko server port")
 	cmd.Flags().StringVar(&terminal, "terminal", "", "Terminal type (zsh, bash, sh, powershell, etc.)")
 	cmd.Flags().BoolVar(&autoExit, "auto-exit", true, "Enable 24-hour auto exit")
 	cmd.Flags().BoolVar(&tmux, "tmux", true, "Use tmux for persistent sessions")

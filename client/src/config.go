@@ -17,7 +17,6 @@ type Config struct {
 	AuthName      string
 	Session       string
 	Remote        string
-	ServerPort    int
 	GottyPort     int
 	Terminal      string
 	Pass          string
@@ -38,7 +37,6 @@ func NewConfig() *Config {
 		AuthName:      getEnvOrDefault("AUTH_NAME", ""),
 		Session:       getEnvOrDefault("SESSION", ""),
 		Remote:        getEnvOrDefault("REMOTE", ""),
-		ServerPort:    getEnvIntOrDefault("SERVER_PORT", 8022),
 		GottyPort:     0,
 		Terminal:      getEnvOrDefault("TERMINAL", ""),
 		AutoExit:      getEnvBoolOrDefault("AUTO_EXIT", true),
