@@ -58,24 +58,34 @@ services:
 docker-compose up -d
 ```
 
+### Client Usage
+
+#### Download
+
+| Platform | Binary | Size |
+|----------|--------|------|
+| Linux amd64 | `gottyp-linux-amd64` | ~21 MB |
+| Linux arm64 | `gottyp-linux-arm64` | ~20 MB |
+| macOS Intel | `gottyp-darwin-amd64` | ~22 MB |
+| macOS Apple Silicon | `gottyp-darwin-arm64` | ~21 MB |
+
 ```bash
-# Download
+# Download (replace with your platform)
 wget https://github.com/friddle/gotty-piko/releases/latest/download/gottyp-linux-amd64 -O ./gottyp
+# China mirror
+wget https://ghproxy.com/https://github.com/friddle/gotty-piko/releases/latest/download/gottyp-linux-amd64 -O ./gottyp
+
 chmod +x ./gottyp
+```
 
-# Start (daemon mode, default remote: https://clauded.friddle.me)
+#### Start
+
+```bash
 ./gottyp
-
-# With session name
+# or with options
 ./gottyp --session myserver
-
-# Disable auth
 ./gottyp --auth=false
-
-# With static file browsing and port proxy
 ./gottyp --static-index=/home/user --attach-port=3000
-
-# Foreground mode
 ./gottyp --daemon=false
 ```
 
