@@ -1,0 +1,3 @@
+[submodule "upstream/gotty"]
+	path = upstream/gotty
+	url = git@github.com:friddle/gotty.git
