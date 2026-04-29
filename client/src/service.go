@@ -262,8 +262,8 @@ func (sm *ServiceManager) startPiko() error {
 			},
 		},
 		Log: log.Config{
-			Level:      "info",
-			Subsystems: []string{},
+			Level:      "debug",
+			Subsystems: []string{"client"},
 		},
 		GracePeriod: 30 * time.Second,
 	}
@@ -292,10 +292,12 @@ func (sm *ServiceManager) startPiko() error {
 
 	// 为每个监听器创建连接
 	for _, listenerConfig := range conf.Listeners {
+		fmt.Printf("[piko] connecting to endpoint: %s, remote: %s\n", listenerConfig.EndpointID, remote)
 		ln, err := upstream.Listen(sm.ctx, listenerConfig.EndpointID)
 		if err != nil {
 			return fmt.Errorf("failed to listen on endpoint %s: %v", listenerConfig.EndpointID, err)
 		}
+		fmt.Printf("[piko] connected to endpoint: %s\n", listenerConfig.EndpointID)
 
 		metrics := reverseproxy.NewMetrics("proxy")
 		proxySrv := reverseproxy.NewServer(listenerConfig, metrics, logger)
