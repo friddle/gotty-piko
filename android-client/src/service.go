@@ -40,7 +40,7 @@ func NewServiceManager(config *Config) *ServiceManager {
 // Start starts all services
 func (sm *ServiceManager) Start() error {
 	fmt.Printf("🚀 Starting gotty-piko client\n")
-	fmt.Printf("Client name: %s\n", sm.Config.Name)
+	fmt.Printf("Client name: %s\n", sm.Config.Session)
 	fmt.Printf("Remote server: %s\n", sm.Config.Remote)
 	fmt.Printf("Terminal: %s\n", sm.getShell())
 	fmt.Printf("Auto-exit: %t\n", sm.Config.AutoExit)
@@ -132,7 +132,7 @@ func (sm *ServiceManager) startServices() error {
 	fmt.Printf("✅ Services started successfully!\n")
 	fmt.Printf("🌐 Access URL: http://localhost:%d\n", sm.Config.GottyPort)
 	if sm.Config.Pass != "" {
-		fmt.Printf("🔐 HTTP Authentication: username=%s, password=%s\n", sm.Config.Name, sm.Config.Pass)
+		fmt.Printf("🔐 HTTP Authentication: username=%s, password=%s\n", sm.Config.AuthName, sm.Config.Pass)
 	} else {
 		fmt.Printf("⚠️  HTTP authentication not enabled\n")
 	}
@@ -154,7 +154,7 @@ func (sm *ServiceManager) startGotty() error {
 	options := &server.Options{
 		Address:         "127.0.0.1",
 		Port:            fmt.Sprintf("%d", sm.Config.GottyPort),
-		Path:            "/" + sm.Config.Name,
+		Path:            "/" + sm.Config.Session,
 		PermitWrite:     true,
 		TitleFormat:     "{{ .command }}@{{ .hostname }}",
 		WSOrigin:        ".*",                 // Allow WebSocket connections from all origins
@@ -162,7 +162,7 @@ func (sm *ServiceManager) startGotty() error {
 	}
 
 	if sm.Config.Pass != "" {
-		options.Credential = sm.Config.Name + ":" + sm.Config.Pass // Set auth credentials: username:password
+		options.Credential = sm.Config.AuthName + ":" + sm.Config.Pass // Set auth credentials: username:password
 	}
 
 	// Create local command factory
@@ -207,7 +207,7 @@ func (sm *ServiceManager) startPiko() error {
 		},
 		Listeners: []config.ListenerConfig{
 			{
-				EndpointID: sm.Config.Name,
+				EndpointID: sm.Config.Session,
 				Protocol:   config.ListenerProtocolHTTP,
 				Addr:       fmt.Sprintf("127.0.0.1:%d", sm.Config.GottyPort),
 				AccessLog:  false,

@@ -1,16 +1,21 @@
 package src
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
 
 // Config represents the configuration for the gotty-piko client
 type Config struct {
-	Name       string // Piko client name
+	Session    string // Session identifier (used for piko endpointID and gotty path)
+	AuthName   string // Auth username (auto-generated if not set)
 	Remote     string // Remote piko server address (format: host:port)
 	ServerPort int    // Piko server port
 	GottyPort  int    // Local gotty port (auto-allocated)
@@ -22,7 +27,8 @@ type Config struct {
 // NewConfig creates a new configuration instance with environment variables
 func NewConfig() *Config {
 	return &Config{
-		Name:       getEnvOrDefault("NAME", ""),
+		Session:    getEnvOrDefault("SESSION", ""),
+		AuthName:   getEnvOrDefault("AUTH_NAME", ""),
 		Remote:     getEnvOrDefault("REMOTE", ""),
 		ServerPort: getEnvIntOrDefault("SERVER_PORT", 8022),
 		GottyPort:  0,                                      // Will be auto-allocated on startup
@@ -34,11 +40,16 @@ func NewConfig() *Config {
 
 // Validate validates the configuration
 func (c *Config) Validate() error {
-	if c.Name == "" {
-		return fmt.Errorf("client name cannot be empty")
+	if c.Session == "" {
+		c.Session = generateDefaultSession()
+		fmt.Printf("📋 Auto-generated session: %s\n", c.Session)
 	}
 	if c.Remote == "" {
 		return fmt.Errorf("remote server address cannot be empty")
+	}
+	if c.AuthName == "" {
+		c.AuthName = generateRandomString(8)
+		fmt.Printf("🔑 Auto-generated auth name: %s\n", c.AuthName)
 	}
 	return nil
 }
@@ -112,4 +123,31 @@ func getEnvBoolOrDefault(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
+}
+
+func generateRandomString(length int) string {
+	b := make([]byte, length)
+	rand.Read(b)
+	return hex.EncodeToString(b)[:length]
+}
+
+func generateDefaultSession() string {
+	user := os.Getenv("USER")
+	if user == "" {
+		user = os.Getenv("USERNAME")
+	}
+	if user == "" {
+		user = "unknown"
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "app"
+	}
+	dir := filepath.Base(cwd)
+	rand := generateRandomString(4)
+	session := fmt.Sprintf("%s-%s-%s", user, dir, rand)
+	if runtime.GOOS == "windows" {
+		session = strings.ToLower(session)
+	}
+	return session
 }

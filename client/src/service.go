@@ -38,19 +38,44 @@ func NewServiceManager(config *Config) *ServiceManager {
 }
 
 // Start 启动所有服务
-func (sm *ServiceManager) Start() error {
-	fmt.Printf("🚀 启动 gotty-piko 客户端\n")
-	fmt.Printf("客户端名称: %s\n", sm.config.Name)
-	fmt.Printf("远程服务器: %s\n", sm.config.Remote)
-	fmt.Printf("使用终端: %s\n", sm.getShell())
-	fmt.Printf("自动退出: %t\n", sm.config.AutoExit)
-
-	// 自动分配可用端口
+func (sm *ServiceManager) PrintInfo() string {
 	sm.config.GottyPort = sm.config.FindAvailablePort()
-	fmt.Printf("本地监听端口: %d\n", sm.config.GottyPort)
+	if sm.config.StaticIndex == "." {
+		if cwd, err := os.Getwd(); err == nil {
+			sm.config.StaticIndex = cwd
+		}
+	}
+	sm.printInfo()
+	return sm.config.StaticIndex
+}
 
-	// 使用 oklog/run 启动服务
+func (sm *ServiceManager) Start() error {
+	if sm.config.GottyPort == 0 {
+		sm.config.GottyPort = sm.config.FindAvailablePort()
+	}
+	if env := os.Getenv("GOTTYP_STATIC_INDEX"); env != "" {
+		sm.config.StaticIndex = env
+	}
 	return sm.startServices()
+}
+
+func (sm *ServiceManager) printInfo() {
+	remoteHost := sm.config.GetRemoteHost()
+	sessionPath := "/" + sm.config.Session + "/"
+
+	fmt.Println("========================================")
+	fmt.Printf("Remote URL: https://%s%s\n", remoteHost, sessionPath)
+	if sm.config.Auth {
+		fmt.Printf("Username:   %s\n", sm.config.AuthName)
+		fmt.Printf("Password:   %s\n", sm.config.Pass)
+	}
+	if sm.config.AttachPort != "" {
+		fmt.Printf("Port Proxy: https://%s%sport/%s\n", remoteHost, sessionPath, sm.config.AttachPort)
+	}
+	if sm.config.StaticIndex != "" {
+		fmt.Printf("Files:      https://%s%sfiles/\n", remoteHost, sessionPath)
+	}
+	fmt.Println("========================================")
 }
 
 // startServices 使用 oklog/run 启动所有服务
@@ -100,7 +125,7 @@ func (sm *ServiceManager) startServices() error {
 
 		select {
 		case sig := <-c:
-			fmt.Printf("\n🛑 收到停止信号 %v，正在关闭服务...\n", sig)
+			fmt.Printf("\nReceived signal %v, shutting down...\n", sig)
 			sm.cancel() // 立即取消 context
 			return nil
 		case <-sm.ctx.Done():
@@ -129,16 +154,6 @@ func (sm *ServiceManager) startServices() error {
 		})
 	}
 
-	fmt.Printf("✅ 服务启动成功！\n")
-	fmt.Printf("🌐 访问地址: http://localhost:%d\n", sm.config.GottyPort)
-	if sm.config.Pass != "" {
-		fmt.Printf("🔐 HTTP认证: 用户名=%s, 密码=%s\n", sm.config.Name, sm.config.Pass)
-	} else {
-		fmt.Printf("⚠️  未启用HTTP认证\n")
-	}
-	fmt.Printf("按 Ctrl+C 停止服务\n")
-
-	// 运行所有服务
 	return g.Run()
 }
 
@@ -152,43 +167,48 @@ func (sm *ServiceManager) Stop() {
 	fmt.Printf("✅ 服务已停止\n")
 }
 
-// startGotty 启动 gotty
 func (sm *ServiceManager) startGotty() error {
-	// 创建 gotty 服务器选项
-	fmt.Print("启动gotty中....")
 	options := &server.Options{
-		Address:         "127.0.0.1",
-		Port:            fmt.Sprintf("%d", sm.config.GottyPort),
-		Path:            "/" + sm.config.Name,
-		PermitWrite:     true,
-		TitleFormat:     "{{ .command }}@{{ .hostname }}",
-		WSOrigin:        ".*",                 // 允许所有来源的 WebSocket 连接
-		EnableBasicAuth: sm.config.Pass != "", // 只有当密码不为空时才启用HTTP基本认证
+		Address:       "127.0.0.1",
+		Port:          fmt.Sprintf("%d", sm.config.GottyPort),
+		Path:          "/" + sm.config.Session,
+		SessionName:   sm.config.Session,
+		PermitWrite:   true,
+		TitleFormat:   "{{ .command }}@{{ .hostname }}",
+		WSOrigin:      ".*",
+		Auth:          sm.config.Auth,
+		EnableNotify:  sm.config.EnableNotify,
+		NotifyWebhook: sm.config.NotifyWebhook,
+		StaticIndex:   sm.config.StaticIndex,
+		AttachPort:    sm.config.AttachPort,
 	}
 
-	if sm.config.Pass != "" {
-		options.Credential = sm.config.Name + ":" + sm.config.Pass // 设置认证凭据：用户名:密码
+	if sm.config.Auth {
+		options.Credential = sm.config.AuthName + ":" + sm.config.Pass
+		options.EnableBasicAuth = true
 	}
 
-	// 创建本地命令工厂
+	notifier := server.NewNotifier(sm.config.NotifyWebhook)
+	notifier.Start(sm.config.EnableNotify, "", sm.config.Session)
+
 	backendOptions := &localcommand.Options{}
+	if prefix := notifier.PathPrefix(); prefix != "" {
+		backendOptions.EnvExtra = map[string]string{
+			"PATH": prefix + os.Getenv("PATH"),
+		}
+	}
+
 	var factory *localcommand.Factory
 	var err error
 
 	if sm.config.Tmux {
-		// 检查 tmux 是否可用
 		if sm.isTmuxAvailable() {
-			// 使用 tmux 保持会话
-			// new -A -s <name> <shell>
-			// -A: 如果会话存在则附加，否则创建
-			// -s: 会话名称
 			cmd := "tmux"
-			args := []string{"new", "-A", "-s", "gotty-" + sm.config.Name, sm.getShell()}
+			args := []string{"new", "-A", "-s", "gotty-" + sm.config.Session, sm.getShell()}
 			factory, err = localcommand.NewFactory(cmd, args, backendOptions)
 			fmt.Printf("✅ 使用 tmux 保持会话\n")
 		} else {
-			// tmux 不可用，降级到普通 shell
-			fmt.Printf("⚠️  tmux 未找到，降级使用普通 shell\n")
+			fmt.Printf("ℹ️  tmux not found, using plain shell. Install tmux for a better persistent session experience.\n")
 			factory, err = localcommand.NewFactory(sm.getShell(), []string{}, backendOptions)
 		}
 	} else {
@@ -199,13 +219,11 @@ func (sm *ServiceManager) startGotty() error {
 		return fmt.Errorf("创建 gotty 工厂失败: %v", err)
 	}
 
-	// 创建 gotty 服务器
-	srv, err := server.New(factory, options)
+	srv, err := server.NewWithNotifier(factory, options, notifier)
 	if err != nil {
 		return fmt.Errorf("创建 gotty 服务器失败: %v", err)
 	}
 
-	// 在独立的 goroutine 中启动 gotty 服务器
 	go func() {
 		err := srv.Run(sm.ctx)
 		if err != nil && err != context.Canceled {
@@ -213,14 +231,10 @@ func (sm *ServiceManager) startGotty() error {
 		}
 	}()
 
-	fmt.Print("启动gotty结束\n")
 	return nil
 }
 
-// startPiko 启动 piko 客户端
 func (sm *ServiceManager) startPiko() error {
-	// 创建 piko 配置
-	fmt.Printf("启动piko中\n")
 	remote := sm.config.Remote
 	if strings.HasPrefix(remote, "http") {
 		remote = sm.config.Remote
@@ -234,7 +248,7 @@ func (sm *ServiceManager) startPiko() error {
 		},
 		Listeners: []config.ListenerConfig{
 			{
-				EndpointID: sm.config.Name,
+				EndpointID: sm.config.Session,
 				Protocol:   config.ListenerProtocolHTTP,
 				Addr:       fmt.Sprintf("127.0.0.1:%d", sm.config.GottyPort),
 				AccessLog:  false,
@@ -252,18 +266,16 @@ func (sm *ServiceManager) startPiko() error {
 	// 创建日志记录器
 	logger, err := log.NewLogger("info", []string{})
 	if err != nil {
-		return fmt.Errorf("创建日志记录器失败: %v", err)
+		return fmt.Errorf("failed to create logger: %v", err)
 	}
 
-	// 验证配置
 	if err := conf.Validate(); err != nil {
-		return fmt.Errorf("piko 配置验证失败: %v", err)
+		return fmt.Errorf("piko config validation failed: %v", err)
 	}
 
-	// 解析连接 URL
 	connectURL, err := url.Parse(conf.Connect.URL)
 	if err != nil {
-		return fmt.Errorf("解析连接 URL 失败: %v", err)
+		return fmt.Errorf("failed to parse connect URL: %v", err)
 	}
 
 	// 创建上游客户端
@@ -275,31 +287,24 @@ func (sm *ServiceManager) startPiko() error {
 
 	// 为每个监听器创建连接
 	for _, listenerConfig := range conf.Listeners {
-		fmt.Printf("正在连接到端点: %s\n", listenerConfig.EndpointID)
-
 		ln, err := upstream.Listen(sm.ctx, listenerConfig.EndpointID)
 		if err != nil {
-			return fmt.Errorf("监听端点失败 %s: %v", listenerConfig.EndpointID, err)
+			return fmt.Errorf("failed to listen on endpoint %s: %v", listenerConfig.EndpointID, err)
 		}
 
-		fmt.Printf("成功连接到端点: %s\n", listenerConfig.EndpointID)
-
-		// 创建 HTTP 代理服务器，传入正确的配置而不是 nil
 		metrics := reverseproxy.NewMetrics("proxy")
-		server := reverseproxy.NewServer(listenerConfig, metrics, logger)
-		if server == nil {
-			return fmt.Errorf("创建 HTTP 代理服务器失败")
+		proxySrv := reverseproxy.NewServer(listenerConfig, metrics, logger)
+		if proxySrv == nil {
+			return fmt.Errorf("failed to create HTTP proxy server")
 		}
 
-		// 启动代理服务器
 		go func() {
-			if err := server.Serve(ln); err != nil && err != context.Canceled {
-				fmt.Printf("代理服务器运行错误: %v\n", err)
+			if err := proxySrv.Serve(ln); err != nil && err != context.Canceled {
+				fmt.Printf("proxy server error: %v\n", err)
 			}
 		}()
 	}
 
-	fmt.Printf("启动piko结束\n")
 	return nil
 }
 

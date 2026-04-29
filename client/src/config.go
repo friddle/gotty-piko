@@ -1,58 +1,89 @@
 package src
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
 
 // Config 配置结构体
 type Config struct {
-	Name       string // piko 客户端名称
-	Remote     string // 远程 piko 服务器地址 (格式: host:port)
-	ServerPort int    // piko 服务器端口
-	GottyPort  int    // 本地 gotty 端口 (自动分配)
-	Terminal   string // 指定要使用的终端类型 (zsh, bash, sh, powershell 等)
-	Pass       string // 远程 piko 服务器密码
-	AutoExit   bool   // 是否启用24小时自动退出 (默认: true)
-	Tmux       bool   // 是否使用 tmux 保持会话
+	AuthName      string
+	Session       string
+	Remote        string
+	ServerPort    int
+	GottyPort     int
+	Terminal      string
+	Pass          string
+	AutoExit      bool
+	Tmux          bool
+	Auth          bool
+	EnableNotify  bool
+	NotifyWebhook string
+	StaticIndex   string
+	AttachPort    string
+	Daemon        bool
+	PidFile       string
 }
 
 // NewConfig 创建新的配置实例
 func NewConfig() *Config {
 	return &Config{
-		Name:       getEnvOrDefault("NAME", ""),
-		Remote:     getEnvOrDefault("REMOTE", ""),
-		ServerPort: getEnvIntOrDefault("SERVER_PORT", 8022),
-		GottyPort:  0,                                      // 将在启动时自动分配
-		Terminal:   getEnvOrDefault("TERMINAL", ""),        // 从环境变量读取终端类型
-		AutoExit:   getEnvBoolOrDefault("AUTO_EXIT", true), // 从环境变量读取自动退出设置，默认为 true
-		Tmux:       getEnvBoolOrDefault("TMUX", false),     // 从环境变量读取 tmux 设置，默认为 false
-		Pass:       getEnvOrDefault("PASS", ""),
+		AuthName:      getEnvOrDefault("AUTH_NAME", ""),
+		Session:       getEnvOrDefault("SESSION", ""),
+		Remote:        getEnvOrDefault("REMOTE", ""),
+		ServerPort:    getEnvIntOrDefault("SERVER_PORT", 8022),
+		GottyPort:     0,
+		Terminal:      getEnvOrDefault("TERMINAL", ""),
+		AutoExit:      getEnvBoolOrDefault("AUTO_EXIT", true),
+		Tmux:          getEnvBoolOrDefault("TMUX", true),
+		Pass:          getEnvOrDefault("PASS", ""),
+		Auth:          getEnvBoolOrDefault("AUTH", true),
+		EnableNotify:  getEnvBoolOrDefault("ENABLE_NOTIFY", true),
+		NotifyWebhook: getEnvOrDefault("NOTIFY_WEBHOOK", ""),
+		StaticIndex:   getEnvOrDefault("STATIC_INDEX", "."),
+		AttachPort:    getEnvOrDefault("ATTACH_PORT", ""),
+		Daemon:        getEnvBoolOrDefault("DAEMON", true),
+		PidFile:       getEnvOrDefault("PID_FILE", "/tmp/gottyp.pid"),
 	}
 }
 
 // Validate 验证配置
 func (c *Config) Validate() error {
-	if c.Name == "" {
-		return fmt.Errorf("客户端名称不能为空")
+	if c.Session == "" {
+		c.Session = generateDefaultSession()
 	}
 	if c.Remote == "" {
-		return fmt.Errorf("远程服务器地址不能为空")
+		return fmt.Errorf("remote server address is required")
+	}
+	if c.Auth {
+		if c.AuthName == "" {
+			c.AuthName = generateRandomString(8)
+		}
+		if c.Pass == "" {
+			c.Pass = generateRandomString(10)
+		}
 	}
 	return nil
 }
 
-// GetRemoteHost 获取远程主机地址
+// GetRemoteHost 获取远程主机地址（用于显示 URL）
 func (c *Config) GetRemoteHost() string {
-	// 解析 remote 参数，格式: host:port
-	parts := strings.Split(c.Remote, ":")
-	if len(parts) >= 1 {
-		return parts[0]
+	host := c.Remote
+	host = strings.TrimPrefix(host, "https://")
+	host = strings.TrimPrefix(host, "http://")
+	host = strings.Split(host, "/")[0]
+	host = strings.Split(host, ":")[0]
+	if host == "" {
+		host = "clauded.friddle.me"
 	}
-	return "localhost"
+	return host
 }
 
 // GetRemotePort 获取远程端口
@@ -114,4 +145,31 @@ func getEnvBoolOrDefault(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
+}
+
+func generateRandomString(length int) string {
+	b := make([]byte, length)
+	rand.Read(b)
+	return hex.EncodeToString(b)[:length]
+}
+
+func generateDefaultSession() string {
+	user := os.Getenv("USER")
+	if user == "" {
+		user = os.Getenv("USERNAME")
+	}
+	if user == "" {
+		user = "unknown"
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "app"
+	}
+	dir := filepath.Base(cwd)
+	rand := generateRandomString(4)
+	session := fmt.Sprintf("%s-%s-%s", user, dir, rand)
+	if runtime.GOOS == "windows" {
+		session = strings.ToLower(session)
+	}
+	return session
 }

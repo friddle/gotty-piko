@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"syscall"
 
 	"gotty-piko-client/src"
 
@@ -12,74 +14,146 @@ import (
 func main() {
 	rootCmd := MakeMainCmd()
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "错误: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 func MakeMainCmd() *cobra.Command {
 	var (
-		name       string
-		remote     string
-		serverPort int
-		terminal   string
-		autoExit   bool
-		pass       string
-		tmux       bool
+		session       string
+		authName      string
+		remote        string
+		serverPort    int
+		terminal      string
+		autoExit      bool
+		pass          string
+		tmux          bool
+		auth          bool
+		enableNotify  bool
+		notifyWebhook string
+		staticIndex   string
+		attachPort    string
+		daemon        bool
+		pidFile       string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "gottyp",
-		Short: "gotty-piko 客户端 - 基于终端的远程协助工具",
-		Long: `gotty-piko 是一个基于终端的高效远程协助工具，集成了 gotty 和 piko 服务。
-专为复杂网络环境下的远程协助而设计，避免传统远程桌面对高带宽的依赖。
+		Short: "Share your terminal as a web application via piko",
+		Long: `gottyp is a one-shot tool that integrates gotty and piko.
+It starts a local gotty terminal session and registers it with a remote piko server,
+making your terminal accessible via a web browser.
 
-使用示例:
-  gottyp --name=my-server --remote=192.168.1.100:8088 --pass=mypassword  # 连接到远程 piko 服务器，启用HTTP认证
-  gottyp --name=client1 --remote=piko.example.com:8022 --pass=secret123  # 连接到远程 piko 服务器，启用HTTP认证
-  gottyp --name=local --remote=192.168.1.100:8088 --terminal=zsh --pass=localpass  # 指定使用 zsh，启用HTTP认证
-  gottyp --name=server --remote=192.168.1.100:8088 --auto-exit=false --pass=serverpass  # 禁用24小时自动退出，启用HTTP认证`,
+Examples:
+  gottyp --remote=piko.example.com:8088
+  gottyp --remote=piko.example.com:8088 --session myterm --tmux=true
+  gottyp --remote=piko.example.com:8088 --auth=false
+  gottyp --remote=piko.example.com:8088 --notify-webhook=https://open.feishu.cn/...`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// 创建配置
 			config := &src.Config{
-				Name:       name,
-				Remote:     remote,
-				ServerPort: serverPort,
-				Terminal:   terminal,
-				AutoExit:   autoExit,
-				Pass:       pass,
-				Tmux:       tmux,
+				Session:       session,
+				AuthName:      authName,
+				Remote:        remote,
+				ServerPort:    serverPort,
+				Terminal:      terminal,
+				AutoExit:      autoExit,
+				Pass:          pass,
+				Tmux:          tmux,
+				Auth:          auth,
+				EnableNotify:  enableNotify,
+				NotifyWebhook: notifyWebhook,
+				StaticIndex:   staticIndex,
+				AttachPort:    attachPort,
+				Daemon:        daemon,
+				PidFile:       pidFile,
 			}
 
-			// 验证配置
 			if err := config.Validate(); err != nil {
-				return fmt.Errorf("配置验证失败: %v", err)
+				return err
 			}
 
-			// 创建服务管理器
 			manager := src.NewServiceManager(config)
 
-			// 启动服务（会阻塞直到服务停止）
+			if config.Daemon {
+				staticIndex := manager.PrintInfo()
+				if err := src.Daemonize(staticIndex, config.PidFile); err != nil {
+					return fmt.Errorf("failed to daemonize: %v", err)
+				}
+			}
+
+			if src.IsDaemonized() {
+				f, err := os.OpenFile("/tmp/gottyp.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+				if err == nil {
+					syscall.Dup2(int(f.Fd()), int(os.Stdout.Fd()))
+					syscall.Dup2(int(f.Fd()), int(os.Stderr.Fd()))
+				}
+			}
+
 			if err := manager.Start(); err != nil {
-				return fmt.Errorf("启动服务失败: %v", err)
+				return err
 			}
 
 			return nil
 		},
 	}
 
-	// 添加命令行参数
-	cmd.Flags().StringVar(&name, "name", "", "piko 客户端标识名称")
-	cmd.Flags().StringVar(&remote, "remote", "", "远程 piko 服务器地址 (格式: host:port)")
-	cmd.Flags().IntVar(&serverPort, "server-port", 8022, "piko 服务器端口")
-	cmd.Flags().StringVar(&terminal, "terminal", "", "指定要使用的终端类型 (zsh, bash, sh, powershell 等)")
-	cmd.Flags().BoolVar(&autoExit, "auto-exit", true, "是否启用24小时自动退出 (默认: true)")
-	cmd.Flags().BoolVar(&tmux, "tmux", true, "是否使用 tmux 保持会话 (默认: true, 找不到时降级到bash)")
-	cmd.Flags().StringVar(&pass, "pass", "", "HTTP认证密码")
+	cmd.Flags().StringVar(&session, "session", "", "Session ID for endpoint path (default: user_dir_random)")
+	cmd.Flags().StringVar(&authName, "auth-name", "", "Auth username for Basic Auth (auto-generated if not set)")
+	cmd.Flags().StringVar(&remote, "remote", "https://clauded.friddle.me", "Remote piko server address")
+	cmd.Flags().IntVar(&serverPort, "server-port", 8022, "Piko server port")
+	cmd.Flags().StringVar(&terminal, "terminal", "", "Terminal type (zsh, bash, sh, powershell, etc.)")
+	cmd.Flags().BoolVar(&autoExit, "auto-exit", true, "Enable 24-hour auto exit")
+	cmd.Flags().BoolVar(&tmux, "tmux", true, "Use tmux for persistent sessions")
+	cmd.Flags().StringVar(&pass, "pass", "", "Auth password (auto-generated if not set)")
+	cmd.Flags().BoolVar(&auth, "auth", true, "Enable Basic Authentication")
+	cmd.Flags().BoolVar(&enableNotify, "enable-notify", true, "Enable notify-send interception")
+	cmd.Flags().StringVar(&notifyWebhook, "notify-webhook", "", "Webhook URL to forward notifications to (Feishu compatible)")
+	cmd.Flags().StringVar(&staticIndex, "static-index", ".", "Local directory to serve as static files at /files/")
+	cmd.Flags().StringVar(&attachPort, "attach-port", "", "Map a local port to /port/ path (e.g. 3000)")
+	cmd.Flags().BoolVar(&daemon, "daemon", true, "Run as daemon (background process)")
+	cmd.Flags().StringVar(&pidFile, "pid-file", "/tmp/gottyp.pid", "PID file path for daemon mode")
 
-	// 设置必需参数
-	cmd.MarkFlagRequired("name")
-	cmd.MarkFlagRequired("remote")
+	cmd.AddCommand(tmuxCmd())
 
 	return cmd
+}
+
+func tmuxCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "tmux",
+		Short: "Manage tmux sessions",
+	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:     "list",
+		Short:   "List tmux sessions",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTmux("list-sessions")
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:     "kill-all",
+		Short:   "Kill all tmux sessions and gottyp daemons",
+		Aliases: []string{"kill"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			src.KillAllDaemons()
+			return runTmux("kill-server")
+		},
+	})
+
+	return cmd
+}
+
+func runTmux(args ...string) error {
+	bin, err := exec.LookPath("tmux")
+	if err != nil {
+		return fmt.Errorf("tmux not found")
+	}
+	cmd := exec.Command(bin, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }

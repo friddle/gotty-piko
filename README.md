@@ -4,36 +4,39 @@
 
 An efficient terminal-based remote assistance tool that integrates gotty and piko services. Designed for remote assistance in complex network environments, avoiding the high bandwidth dependency of traditional remote desktop solutions while eliminating the need for complex network configurations and public IP addresses.
 
-[gotty](https://github.com/sorenisanerd/gotty)
+[gotty](https://github.com/friddle/gotty) (forked with custom modifications)
 [piko](https://github.com/andydunstall/piko)
 
 **Note:**
 1. Windows solution use [goxrdp-piko](https://github.com/friddle/goxrdp-piko)
-2. Default 24-hour auto-exit program
 
 ## Features
 
-- 🚀 **Lightweight**: Terminal-based remote assistance with low resource usage
-- 🔧 **Easy Deployment**: One-click Docker deployment with simple configuration
-- 🔒 **Secure & Reliable**: Based on SSH protocol with user authentication support
-- 📱 **Cross-platform**: Supports Linux, macOS
-- 💻 **Smart Shell**: Automatically selects appropriate shell based on operating system (PowerShell for Windows, Bash for Linux)
+- One-shot binary: gotty + piko in one command
+- Daemon mode (default): runs in background
+- Auto-generated session ID: `{user}_{dir}_{random}`
+- Basic Auth enabled by default with auto-generated credentials
+- notify-send interception: desktop notifications pushed to browser toast
+- Webhook forwarding: Feishu-compatible notification relay
+- Static file browsing via `/files/` path
+- Port proxy via `/port/{port}` path
+- tmux integration for persistent sessions
+- Cross-platform: Linux, macOS, Android
 
 ## Architecture
 
 ```
-Client (gotty-piko client)
-    ↓ Local Shell
-gotty service
-    ↓ HTTP access
-Browser terminal
+gottyp (client)
+  ├── gotty (local web terminal)
+  │     ├── /{session}/          → terminal web UI
+  │     ├── /{session}/files/    → static file browser
+  │     └── /{session}/port/{p}  → port proxy
+  └── piko client → piko server → browser (via Cloudflare/CDN)
 ```
 
 ## Quick Start
 
 ### Server Deployment
-
-1. **Deploy using Docker Compose**
 
 ```yaml
 # docker-compose.yaml
@@ -51,80 +54,88 @@ services:
     restart: unless-stopped
 ```
 
-Or using Docker directly:
-
-```bash
-docker run -ti --network=host --rm --name=piko-server ghcr.io/friddle/gotty-piko-server
-```
-
-
-2. **Start the service**
-
-```bash
-docker-compose up -d
-```
-
 ### Client Usage
 
-#### Linux Client
-
 ```bash
-# Download client
-wget https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-linux-amd64 -O ./gottyp
+# Download
+wget https://github.com/friddle/gotty-piko/releases/latest/download/gottyp-linux-amd64 -O ./gottyp
 chmod +x ./gottyp
 
-./gottyp --name=local --remote=192.168.1.100:8088(ServerIP:PORT)
-./gottyp --name=local --remote=192.168.1.100:8088 --pass=helloworld #http auth as name:pass --auto-exit=false(no auto exit)
+# Start (daemon mode, default remote: https://clauded.friddle.me)
+./gottyp
+
+# With session name
+./gottyp --session myserver
+
+# Disable auth
+./gottyp --auth=false
+
+# With static file browsing and port proxy
+./gottyp --static-index=/home/user --attach-port=3000
+
+# Foreground mode
+./gottyp --daemon=false
 ```
 
-#### macOS Client
-
-```bash
-# Download client
-curl -L -o gottyp https://github.com/friddle/gotty-piko/releases/download/v1.0.1/gottyp-darwin-amd64
-chmod +x ./gottyp
-
-./gottyp --name=local --remote=192.168.1.100:8088(ServerIP:PORT)
+Output:
 ```
-
-![Client Start Screenshot](screenshot/start_cli.png)
-![Web UI Screenshot](screenshot/webui.png)
+========================================
+Remote URL: https://clauded.friddle.me/user_project_a1b2/
+Username:   x7kq3m
+Password:   p9w2nfc8h4
+Port Proxy: https://clauded.friddle.me/user_project_a1b2/port/3000
+Files:      https://clauded.friddle.me/user_project_a1b2/files/
+========================================
+```
 
 ## Access Methods
 
-After starting the client, access the corresponding terminal via:
-```
-http://host-server-ip:port/client-name
-```
-
-Example:
-- Server listening address: `192.168.1.100:8088` (server IP and NGINX)
-- Client name: `local`
-- Access URL: `http://192.168.1.100:8088/local`
+| URL | Description |
+|-----|-------------|
+| `https://clauded.friddle.me/{session}/` | Terminal web UI |
+| `https://clauded.friddle.me/{session}/files/` | Static file browser |
+| `https://clauded.friddle.me/{session}/port/{port}` | Port proxy |
 
 ## Configuration
 
 ### Client Parameters
 
-| Parameter | Description | Default | Required |
-|-----------|-------------|---------|----------|
-| `--name` | piko client identifier name | - | ✅ |
-| `--remote` | Remote piko server address (format: host:port) | - | ✅ |
-| `--terminal` | Specify terminal type to use (zsh, bash, sh, powershell, etc.) | Auto-select | ❌ |
-| `--pass` | http auth password | None mean not need auth,auth account is name | ❌ |
-| `--auto-exit` | Set auto exit | Default true, exit after 24 hours | ❌ |
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--session` | Session ID (piko endpoint + gotty path) | `{user}_{dir}_{random}` |
+| `--remote` | Piko server URL | `https://clauded.friddle.me` |
+| `--auth` | Enable Basic Authentication | `true` |
+| `--auth-name` | Auth username | auto-generated |
+| `--pass` | Auth password | auto-generated |
+| `--terminal` | Terminal type (zsh, bash, sh, etc.) | auto-select |
+| `--tmux` | Use tmux for persistent sessions | `true` |
+| `--daemon` | Run as daemon (background) | `true` |
+| `--pid-file` | PID file path | `/tmp/gottyp.pid` |
+| `--enable-notify` | Intercept notify-send | `true` |
+| `--notify-webhook` | Webhook URL (Feishu compatible) | disabled |
+| `--static-index` | Directory for /files/ | current directory |
+| `--attach-port` | Port for /port/ proxy | disabled |
+| `--auto-exit` | Auto exit after 24h | `true` |
+| `--server-port` | Piko server port | `8022` |
 
-### Server Environment Variables
+### Subcommands
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PIKO_UPSTREAM_PORT` | Piko upstream port | 8022 |
-| `LISTEN_PORT` | HTTP listen port | 8088 |
+```bash
+gottyp tmux list        # List tmux sessions
+gottyp tmux kill-all    # Kill all tmux sessions and gottyp daemons
+```
 
-### Shell Selection
+### Environment Variables
 
-The client automatically selects the appropriate shell based on the operating system:
-- **Linux**: sh
-- **macOS**: bash
-
-You can also manually specify the terminal type using the `--terminal` parameter or `TERMINAL` environment variable.
+| Variable | Description |
+|----------|-------------|
+| `SESSION` | Session ID |
+| `AUTH_NAME` | Auth username |
+| `PASS` | Auth password |
+| `REMOTE` | Piko server URL |
+| `TERMINAL` | Terminal type |
+| `DAEMON` | Daemon mode |
+| `ENABLE_NOTIFY` | Notify interception |
+| `NOTIFY_WEBHOOK` | Webhook URL |
+| `STATIC_INDEX` | Static file directory |
+| `ATTACH_PORT` | Port proxy target |
