@@ -7,6 +7,8 @@ An efficient terminal-based remote assistance tool that integrates gotty and pik
 [gotty](https://github.com/friddle/gotty) (forked with custom modifications)
 [piko](https://github.com/andydunstall/piko)
 
+> **Strongly recommend self-hosting!** The public server is for trial only. Deploy your own piko + gottyp instance in production to avoid security risks and performance bottlenecks.
+
 **Note:**
 1. Windows solution use [goxrdp-piko](https://github.com/friddle/goxrdp-piko)
 
@@ -22,6 +24,16 @@ An efficient terminal-based remote assistance tool that integrates gotty and pik
 - Port proxy via `/port/{port}` path
 - tmux integration for persistent sessions
 - Cross-platform: Linux, macOS, Android
+
+## Screenshots
+
+### CLI Start
+
+![CLI Start](screenshot/start_cli.png)
+
+### Web UI
+
+![Web UI](screenshot/webui.png)
 
 ## Architecture
 

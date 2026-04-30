@@ -7,6 +7,8 @@ English | [中文文档](README_CN.md)
 [gotty](https://github.com/friddle/gotty) (fork 定制版)
 [piko](https://github.com/andydunstall/piko)
 
+> **强烈建议自己部署（self-host）！** 公共服务器仅供体验，生产环境请自行部署 piko + gottyp，避免安全隐患和性能瓶颈。
+
 **注意：**
 1. Windows 方案使用 [goxrdp-piko](https://github.com/friddle/goxrdp-piko)
 
@@ -22,6 +24,16 @@ English | [中文文档](README_CN.md)
 - 端口代理：通过 `/port/{port}` 路径转发
 - tmux 集成：持久化会话
 - 跨平台：Linux、macOS、Android
+
+## 截图
+
+### CLI 启动
+
+![CLI 启动](screenshot/start_cli.png)
+
+### Web 界面
+
+![Web 界面](screenshot/webui.png)
 
 ## 架构说明
 
