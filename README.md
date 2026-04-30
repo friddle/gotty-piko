@@ -45,8 +45,6 @@ services:
   clauded:
     image: friddlecopper/clauded-port-forward:latest
     container_name: clauded
-    environment:
-      - PIKO_UPSTREAM_PORT=8022
     ports:
       - "80:80"
     restart: unless-stopped
