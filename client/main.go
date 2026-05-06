@@ -76,7 +76,7 @@ Examples:
 
 			if config.Daemon {
 				staticIndex := manager.PrintInfo()
-				if err := src.Daemonize(staticIndex, config.PidFile); err != nil {
+				if err := src.Daemonize(staticIndex, config.PidFile, config.Session, config.AuthName, config.Pass); err != nil {
 					return fmt.Errorf("failed to daemonize: %v", err)
 				}
 			} else {

@@ -55,17 +55,29 @@ func NewConfig() *Config {
 // Validate 验证配置
 func (c *Config) Validate() error {
 	if c.Session == "" {
-		c.Session = generateDefaultSession()
+		if s := os.Getenv("GOTTYP_SESSION"); s != "" {
+			c.Session = s
+		} else {
+			c.Session = generateDefaultSession()
+		}
 	}
 	if c.Remote == "" {
 		return fmt.Errorf("remote server address is required")
 	}
 	if c.Auth {
 		if c.AuthName == "" {
-			c.AuthName = generateRandomString(8)
+			if n := os.Getenv("GOTTYP_AUTH_NAME"); n != "" {
+				c.AuthName = n
+			} else {
+				c.AuthName = generateRandomString(8)
+			}
 		}
 		if c.Pass == "" {
-			c.Pass = generateRandomString(10)
+			if p := os.Getenv("GOTTYP_PASS"); p != "" {
+				c.Pass = p
+			} else {
+				c.Pass = generateRandomString(10)
+			}
 		}
 	}
 	return nil

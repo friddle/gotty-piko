@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func Daemonize(staticIndex string, pidFile string) error {
+func Daemonize(staticIndex string, pidFile string, sessionID string, authName string, pass string) error {
 	if syscall.Getppid() == 1 {
 		return nil
 	}
@@ -33,6 +33,9 @@ func Daemonize(staticIndex string, pidFile string) error {
 	cmd.Env = append(os.Environ(),
 		"GOTTYP_DAEMONIZED=1",
 		"GOTTYP_STATIC_INDEX="+staticIndex,
+		"GOTTYP_SESSION="+sessionID,
+		"GOTTYP_AUTH_NAME="+authName,
+		"GOTTYP_PASS="+pass,
 	)
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start daemon: %w", err)
