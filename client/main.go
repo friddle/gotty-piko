@@ -36,6 +36,7 @@ func MakeMainCmd() *cobra.Command {
 		attachPort    string
 		daemon        bool
 		pidFile       string
+		tmuxSession   string
 	)
 
 	cmd := &cobra.Command{
@@ -66,6 +67,7 @@ Examples:
 				AttachPort:    attachPort,
 				Daemon:        daemon,
 				PidFile:       pidFile,
+				TmuxSession:   tmuxSession,
 			}
 
 			if err := config.Validate(); err != nil {
@@ -105,6 +107,7 @@ Examples:
 	cmd.Flags().StringVar(&terminal, "terminal", "", "Terminal type (zsh, bash, sh, powershell, etc.)")
 	cmd.Flags().BoolVar(&autoExit, "auto-exit", true, "Enable 24-hour auto exit")
 	cmd.Flags().BoolVar(&tmux, "tmux", true, "Use tmux for persistent sessions")
+	cmd.Flags().StringVar(&tmuxSession, "tmux-session", "", "Attach to a specific tmux session by name (overrides auto-generated session name)")
 	cmd.Flags().StringVar(&pass, "pass", "", "Auth password (auto-generated if not set)")
 	cmd.Flags().BoolVar(&auth, "auth", true, "Enable Basic Authentication")
 	cmd.Flags().BoolVar(&enableNotify, "enable-notify", true, "Enable notify-send interception")

@@ -208,8 +208,12 @@ func (sm *ServiceManager) startGotty() error {
 
 	if sm.config.Tmux {
 		if sm.isTmuxAvailable() {
+			sessionName := sm.config.TmuxSession
+			if sessionName == "" {
+				sessionName = "gotty-" + sm.config.Session
+			}
 			cmd := "tmux"
-			args := []string{"new", "-A", "-s", "gotty-" + sm.config.Session, sm.getShell()}
+			args := []string{"new", "-A", "-s", sessionName, sm.getShell()}
 			factory, err = localcommand.NewFactory(cmd, args, backendOptions)
 			fmt.Printf("✅ 使用 tmux 保持会话\n")
 		} else {

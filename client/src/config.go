@@ -29,6 +29,7 @@ type Config struct {
 	AttachPort    string
 	Daemon        bool
 	PidFile       string
+	TmuxSession   string
 }
 
 // NewConfig 创建新的配置实例
@@ -49,6 +50,7 @@ func NewConfig() *Config {
 		AttachPort:    getEnvOrDefault("ATTACH_PORT", ""),
 		Daemon:        getEnvBoolOrDefault("DAEMON", true),
 		PidFile:       getEnvOrDefault("PID_FILE", "/tmp/gottyp.pid"),
+		TmuxSession:   getEnvOrDefault("TMUX_SESSION", ""),
 	}
 }
 
