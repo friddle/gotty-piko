@@ -30,6 +30,7 @@ func MakeMainCmd() *cobra.Command {
 		pass          string
 		tmux          bool
 		auth          bool
+		upstreamKey   string
 		enableNotify  bool
 		notifyWebhook string
 		staticIndex   string
@@ -59,9 +60,10 @@ Examples:
 				Terminal:      terminal,
 				AutoExit:      autoExit,
 				Pass:          pass,
-				Tmux:          tmux,
-				Auth:          auth,
-				EnableNotify:  enableNotify,
+			Tmux:          tmux,
+			Auth:          auth,
+			UpstreamKey:   upstreamKey,
+			EnableNotify:  enableNotify,
 				NotifyWebhook: notifyWebhook,
 				StaticIndex:   staticIndex,
 				AttachPort:    attachPort,
@@ -110,6 +112,7 @@ Examples:
 	cmd.Flags().StringVar(&tmuxSession, "tmux-session", "", "Attach to a specific tmux session by name (overrides auto-generated session name)")
 	cmd.Flags().StringVar(&pass, "pass", "", "Auth password (auto-generated if not set)")
 	cmd.Flags().BoolVar(&auth, "auth", true, "Enable Basic Authentication")
+	cmd.Flags().StringVar(&upstreamKey, "upstream-key", "", "API key token to authenticate with the Piko server")
 	cmd.Flags().BoolVar(&enableNotify, "enable-notify", true, "Enable notify-send interception")
 	cmd.Flags().StringVar(&notifyWebhook, "notify-webhook", "", "Webhook URL to forward notifications to (Feishu compatible)")
 	cmd.Flags().StringVar(&staticIndex, "static-index", ".", "Local directory to serve as static files at /files/")

@@ -7,7 +7,10 @@ An efficient terminal-based remote assistance tool that integrates gotty and pik
 [gotty](https://github.com/friddle/gotty) (forked with custom modifications)
 [piko](https://github.com/andydunstall/piko)
 
-> **Strongly recommend self-hosting!** The public server is for trial only. Deploy your own piko + gottyp instance in production to avoid security risks and performance bottlenecks.
+> **Strongly recommend self-hosting!** The public server (`https://clauded.friddle.me`) is provided by the developer and is free to use directly. It is intended for trial and casual use; for production environments, please deploy your own instance to avoid security risks, performance bottlenecks, and session naming conflicts.
+> 
+> **Self-hosting source:** https://github.com/friddle/claude-web-remote/tree/main/cmd/server  
+> **Docker image:** `ghcr.io/friddle/gottyp-piko-server:latest`
 
 **Note:**
 1. Windows solution use [goxrdp-piko](https://github.com/friddle/goxrdp-piko)
@@ -55,7 +58,7 @@ gottyp (client)
 version: "3.8"
 services:
   clauded:
-    image: friddlecopper/clauded-port-forward:latest
+    image: ghcr.io/friddle/gottyp-piko-server:latest
     container_name: clauded
     ports:
       - "80:80"
@@ -65,6 +68,16 @@ services:
 ```bash
 docker-compose up -d
 ```
+
+### Server Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LISTEN_PORT` | `80` | HTTP service port |
+| `PIKO_UPSTREAM_PORT` | `8022` | Piko upstream port (internal use) |
+| `ENABLE_TLS` | `false` | Enable HTTPS |
+| `TLS_CERT_FILE` | - | TLS certificate path |
+| `TLS_KEY_FILE` | - | TLS private key path |
 
 ### Client Usage
 

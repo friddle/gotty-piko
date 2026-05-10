@@ -290,6 +290,7 @@ func (sm *ServiceManager) startPiko() error {
 	// 创建上游客户端
 	upstream := &client.Upstream{
 		URL:       connectURL,
+		Token:     sm.config.UpstreamKey,
 		TLSConfig: nil, // 不使用 TLS
 		Logger:    logger.WithSubsystem("client"),
 	}

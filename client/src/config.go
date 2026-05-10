@@ -30,6 +30,7 @@ type Config struct {
 	Daemon        bool
 	PidFile       string
 	TmuxSession   string
+	UpstreamKey   string
 }
 
 // NewConfig 创建新的配置实例
@@ -51,6 +52,7 @@ func NewConfig() *Config {
 		Daemon:        getEnvBoolOrDefault("DAEMON", true),
 		PidFile:       getEnvOrDefault("PID_FILE", "/tmp/gottyp.pid"),
 		TmuxSession:   getEnvOrDefault("TMUX_SESSION", ""),
+		UpstreamKey:   getEnvOrDefault("UPSTREAM_KEY", ""),
 	}
 }
 

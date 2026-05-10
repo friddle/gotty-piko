@@ -7,7 +7,10 @@ English | [中文文档](README_CN.md)
 [gotty](https://github.com/friddle/gotty) (fork 定制版)
 [piko](https://github.com/andydunstall/piko)
 
-> **强烈建议自己部署（self-host）！** 公共服务器仅供体验，生产环境请自行部署 piko + gottyp，避免安全隐患和性能瓶颈。
+> **强烈建议自己部署（self-host）！** 公共服务器仅供体验，生产环境请自行部署 piko + gottyp，避免安全隐患、性能瓶颈和会话命名冲突。
+> 
+> **自托管源码：** https://github.com/friddle/claude-web-remote/tree/main/cmd/server  
+> **Docker 镜像：** `ghcr.io/friddle/gottyp-piko-server:latest`
 
 **注意：**
 1. Windows 方案使用 [goxrdp-piko](https://github.com/friddle/goxrdp-piko)
@@ -55,7 +58,7 @@ gottyp (客户端)
 version: "3.8"
 services:
   clauded:
-    image: friddlecopper/clauded-port-forward:latest
+    image: ghcr.io/friddle/gottyp-piko-server:latest
     container_name: clauded
     environment:
       - PIKO_UPSTREAM_PORT=8022
@@ -67,6 +70,16 @@ services:
 ```bash
 docker-compose up -d
 ```
+
+### 服务端环境变量
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `LISTEN_PORT` | `80` | HTTP 服务端口 |
+| `PIKO_UPSTREAM_PORT` | `8022` | Piko 上游端口（内部使用） |
+| `ENABLE_TLS` | `false` | 是否启用 HTTPS |
+| `TLS_CERT_FILE` | - | TLS 证书路径 |
+| `TLS_KEY_FILE` | - | TLS 私钥路径 |
 
 ### 客户端使用
 

@@ -1,0 +1,50 @@
+FROM docker.io/library/golang:1.23-alpine
+
+RUN apk add --no-cache \
+    git tmux vim net-tools iptables iputils bind-tools \
+    curl wget ca-certificates gnupg openssh-client \
+    jq htop tree less sudo bash zlib-dev musl-dev libstdc++ \
+    && adduser -D -s /bin/bash developer \
+    && echo "developer ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/developer \
+    && chmod 440 /etc/sudoers.d/developer \
+    && mkdir -p /home/developer/go/bin /home/developer/.config/opencode \
+    && chown -R developer:developer /home/developer
+
+RUN go install golang.org/x/tools/gopls@latest \
+    && go install github.com/go-delve/delve/cmd/dlv@latest \
+    && wget -qO /usr/local/bin/kubectl "https://dl.k8s.io/release/$(wget -qO- https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && chmod +x /usr/local/bin/kubectl
+
+# opencode 需从 release 下载，请替换为实际 URL
+# RUN wget -qO /usr/local/bin/opencode <URL> && chmod +x /usr/local/bin/opencode
+COPY build/binaries/opencode-alpine /usr/local/bin/opencode
+RUN chmod +x /usr/local/bin/opencode
+
+RUN su - developer -c 'git config --global init.defaultBranch main && git config --global core.autocrlf input' \
+    && printf 'set -g mouse on\nset -g default-terminal "screen-256color"\n' > /home/developer/.tmux.conf \
+    && chown developer:developer /home/developer/.tmux.conf
+
+ENV LANG=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN:zh
+ENV LC_ALL=zh_CN.UTF-8
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/home/developer/go
+ENV PATH=$GOROOT/bin:$GOPATH/bin:/usr/local/bin:$PATH
+
+ENV GIT_REPO_URL=
+ENV GIT_USERNAME=
+ENV GIT_PASSWORD=
+ENV GOTTYP_REMOTE=https://clauded.friddle.me
+ENV GOTTYP_USERNAME=
+ENV GOTTYP_PASSWORD=
+ENV GOTTYP_SESSION=
+
+WORKDIR /workspace
+
+COPY build/scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+USER developer
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bash"]
