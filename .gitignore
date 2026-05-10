@@ -1,4 +1,10 @@
 ./client/dist
 ./server/dist
 .vscode
-./dist
+./dist*.DS_Store
+server/dist/
+server/server
+server/Dockerfile.simple
+server/Dockerfile.minimal
+client/dist/
+test-client/

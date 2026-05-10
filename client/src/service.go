@@ -15,6 +15,7 @@ import (
 	"github.com/andydunstall/piko/agent/reverseproxy"
 	"github.com/andydunstall/piko/client"
 	"github.com/andydunstall/piko/pkg/log"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/oklog/run"
 	"github.com/sorenisanerd/gotty/backend/localcommand"
 	"github.com/sorenisanerd/gotty/server"
@@ -243,6 +244,16 @@ func (sm *ServiceManager) startGotty() error {
 	return nil
 }
 
+func generateJWTToken(secretKey, endpointID string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"piko": map[string]interface{}{
+			"endpoints": []string{endpointID},
+		},
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
+	})
+	return token.SignedString([]byte(secretKey))
+}
+
 func (sm *ServiceManager) startPiko() error {
 	remote := sm.config.Remote
 	if strings.HasPrefix(remote, "http") {
@@ -287,10 +298,21 @@ func (sm *ServiceManager) startPiko() error {
 		return fmt.Errorf("failed to parse connect URL: %v", err)
 	}
 
+	// 如果有 upstream-key，生成 JWT token
+	var token string
+	if sm.config.UpstreamKey != "" {
+		jwtToken, err := generateJWTToken(sm.config.UpstreamKey, sm.config.Session)
+		if err != nil {
+			return fmt.Errorf("failed to generate JWT token: %v", err)
+		}
+		token = jwtToken
+		fmt.Printf("[piko] using upstream authentication\n")
+	}
+
 	// 创建上游客户端
 	upstream := &client.Upstream{
 		URL:       connectURL,
-		Token:     sm.config.UpstreamKey,
+		Token:     token,
 		TLSConfig: nil, // 不使用 TLS
 		Logger:    logger.WithSubsystem("client"),
 	}

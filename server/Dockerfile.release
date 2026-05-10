@@ -1,0 +1,9 @@
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY dist/server-linux-amd64 ./server
+
+EXPOSE 80 8022 8023
+
+CMD ["./server"]
