@@ -30,9 +30,13 @@ English | [中文文档](README_CN.md)
 
 ## 截图
 
-### CLI 启动
+### CLI 启动（守护进程模式）
 
 ![CLI 启动](screenshot/start_cli.png)
+
+### CLI 启动（前台模式 `--daemon=false`）
+
+![CLI 启动前台模式](screenshot/start_cli_no_daemon.png)
 
 ### Web 界面
 

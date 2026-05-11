@@ -30,9 +30,13 @@ An efficient terminal-based remote assistance tool that integrates gotty and pik
 
 ## Screenshots
 
-### CLI Start
+### CLI Start (Daemon Mode)
 
 ![CLI Start](screenshot/start_cli.png)
+
+### CLI Start (Foreground Mode `--daemon=false`)
+
+![CLI Start No Daemon](screenshot/start_cli_no_daemon.png)
 
 ### Web UI
 
