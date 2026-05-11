@@ -78,6 +78,7 @@ docker-compose up -d
 | `ENABLE_TLS` | `false` | Enable HTTPS |
 | `TLS_CERT_FILE` | - | TLS certificate path |
 | `TLS_KEY_FILE` | - | TLS private key path |
+| `UPSTREAM_KEY` | - | HMAC secret key for upstream authentication |
 
 ### Client Usage
 
@@ -129,6 +130,27 @@ Files:      https://clauded.friddle.me/user_project_a1b2/files/
 | `https://clauded.friddle.me/{session}/files/` | Static file browser |
 | `https://clauded.friddle.me/{session}/port/{port}` | Port proxy |
 
+## Upstream Authentication
+
+To secure upstream connections between client and server, use the `--upstream-key` flag (or `UPSTREAM_KEY` environment variable).
+
+**Server:**
+```bash
+# Command line
+./server --upstream-key=my-secret
+
+# Docker Compose
+environment:
+  - UPSTREAM_KEY=my-secret
+```
+
+**Client:**
+```bash
+./gottyp --remote=your-server.com --upstream-key=my-secret
+```
+
+Both sides must use the **same key**. The client automatically generates a JWT token from the key for authentication.
+
 ## Configuration
 
 ### Client Parameters
@@ -149,6 +171,7 @@ Files:      https://clauded.friddle.me/user_project_a1b2/files/
 | `--static-index` | Directory for /files/ | current directory |
 | `--attach-port` | Port for /port/ proxy | disabled |
 | `--auto-exit` | Auto exit after 24h | `true` |
+| `--upstream-key` | HMAC secret key for upstream authentication | disabled |
 
 ### Subcommands
 
@@ -171,3 +194,4 @@ gottyp tmux kill-all    # Kill all tmux sessions and gottyp daemons
 | `NOTIFY_WEBHOOK` | Webhook URL |
 | `STATIC_INDEX` | Static file directory |
 | `ATTACH_PORT` | Port proxy target |
+| `UPSTREAM_KEY` | Upstream authentication key |

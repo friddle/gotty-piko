@@ -80,6 +80,7 @@ docker-compose up -d
 | `ENABLE_TLS` | `false` | 是否启用 HTTPS |
 | `TLS_CERT_FILE` | - | TLS 证书路径 |
 | `TLS_KEY_FILE` | - | TLS 私钥路径 |
+| `UPSTREAM_KEY` | - | 上游连接认证的 HMAC 密钥 |
 
 ### 客户端使用
 
@@ -123,6 +124,27 @@ Files:      https://clauded.friddle.me/user_project_a1b2/files/
 | `https://clauded.friddle.me/{session}/files/` | 静态文件浏览器 |
 | `https://clauded.friddle.me/{session}/port/{port}` | 端口代理 |
 
+## 上游认证
+
+为了保护客户端和服务端之间的连接，可以使用 `--upstream-key` 参数（或 `UPSTREAM_KEY` 环境变量）进行认证。
+
+**服务端：**
+```bash
+# 命令行
+./server --upstream-key=my-secret
+
+# Docker Compose
+environment:
+  - UPSTREAM_KEY=my-secret
+```
+
+**客户端：**
+```bash
+./gottyp --remote=your-server.com --upstream-key=my-secret
+```
+
+两边必须使用**相同的密钥**。客户端会自动用该密钥生成 JWT token 进行认证。
+
 ## 配置说明
 
 ### 客户端参数
@@ -143,6 +165,7 @@ Files:      https://clauded.friddle.me/user_project_a1b2/files/
 | `--static-index` | /files/ 对应的目录 | 当前目录 |
 | `--attach-port` | /port/ 代理的目标端口 | 禁用 |
 | `--auto-exit` | 24小时后自动退出 | `true` |
+| `--upstream-key` | 上游连接认证的 HMAC 密钥 | 禁用 |
 
 ### 子命令
 
@@ -165,3 +188,4 @@ gottyp tmux kill-all    # 终止所有 tmux 会话和 gottyp 守护进程
 | `NOTIFY_WEBHOOK` | Webhook URL |
 | `STATIC_INDEX` | 静态文件目录 |
 | `ATTACH_PORT` | 端口代理目标 |
+| `UPSTREAM_KEY` | 上游连接认证密钥 |
